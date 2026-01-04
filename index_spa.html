@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker SPA - Modern Bus Booking</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Tailwind Config -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101a22",
+                        "card-dark": "#1a2631",
+                        "card-border": "#283239",
+                        "surface-dark": "#1b2227",
+                        "seat-available": "#4a5568",
+                        "seat-ladies": "#a78bfa",
+                        "seat-booked": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "linear-gradient(rgba(16, 26, 34, 0.4) 0%, rgba(16, 26, 34, 0.8) 100%)",
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom Glassmorphism styles */
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background-color: #000000 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: #000000;
+            border-color: #259df4;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(37, 157, 244, 0.3);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .view {
+            transition: opacity 0.3s ease;
+        }
+
+        .view.hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        /* 3D Bus Styles */
+        .perspective-container {
+            perspective: 1000px;
+        }
+
+        .bus-floor {
+            transform: rotateX(25deg) scale(0.95);
+            transform-style: preserve-3d;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .seat-3d {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .seat-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .seat-3d.selected {
+            box-shadow: 0 0 15px rgba(37, 157, 244, 0.6), 0 6px 0 rgba(16, 85, 138, 1);
+        }
+
+        /* Pulse Ring */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.33);
+                opacity: 0.8;
+            }
+
+            80%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .pulse-ring {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            border-radius: 50%;
+            background-color: #259df4;
+            opacity: 0.8;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        /* Calendar Modal Styles */
+        #calendar-overlay {
+            display: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        #calendar-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .calendar-modal {
+            background: rgba(26, 38, 49, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #calendar-overlay.active .calendar-modal {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .calendar-day-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .calendar-day-btn:hover:not(.disabled) {
+            background: rgba(37, 157, 244, 0.15);
+            color: #259df4;
+        }
+
+        .calendar-day-btn.active {
+            background: #259df4;
+            color: white;
+            box-shadow: 0 6px 15px rgba(37, 157, 244, 0.4);
+            font-weight: 700;
+        }
+
+        .calendar-day-btn.disabled {
+            opacity: 0.1;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden antialiased">
+
+    <!-- Shared Header -->
+    <header id="main-header"
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-gradient-to-b from-background-dark/90 to-transparent">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-5">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 text-white cursor-pointer" onclick="navigateTo('home')">
+                    <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 text-primary">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">directions_bus</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold tracking-tight">BusBooker</h2>
+                </div>
+                <!-- Navigation -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('home')">Home</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('search')">Routes</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('dashboard')">My Trips</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Help</a>
+                </div>
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    <!-- Currency Selector -->
+                    <div class="relative group" id="currency-selector">
+                        <button id="currency-btn"
+                            class="hidden sm:flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium h-10 px-3 rounded-lg hover:bg-white/5 transition-all">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">language</span>
+                            <span id="active-currency">INR</span>
+                            <span class="material-symbols-outlined text-xs transition-transform group-open:rotate-180"
+                                style="font-size: 16px;">expand_more</span>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="currency-dropdown"
+                            class="absolute top-12 right-0 w-40 glass-panel rounded-xl py-2 shadow-2xl scale-95 opacity-0 invisible transition-all duration-200 origin-top-right z-[60]">
+                            <div class="px-3 py-2 text-[10px] font-bold text-white/40 uppercase tracking-wider">Select
+                                Currency</div>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="INR">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">payments</span>
+                                <span>INR - Rupee</span>
+                            </button>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="USD">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">attach_money</span>
+                                <span>USD - Dollar</span>
+                            </button>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="EUR">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">euro</span>
+                                <span>EUR - Euro</span>
+                            </button>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="GBP">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">currency_pound</span>
+                                <span>GBP - Pound</span>
+                            </button>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="AED">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">currency_exchange</span>
+                                <span>AED - Dirham</span>
+                            </button>
+                        </div>
+                    </div>
+                    <a onclick="navigateTo('signin')"
+                        class="flex items-center justify-center rounded-lg h-10 px-6 bg-white/10 hover:bg-white/20 text-white text-sm font-bold backdrop-blur-sm transition-all border border-white/10 cursor-pointer">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-container">
+        <!-- Home View -->
+        <section id="view-home" class="view">
+            <main class="relative flex-1 flex flex-col justify-center items-center min-h-[90vh]">
+                <div class="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-hero-pattern"
+                    style='background-image: linear-gradient(rgba(16, 26, 34, 0.3) 0%, rgba(16, 26, 34, 0.9) 100%), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000");'>
+                </div>
+                <div class="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20">
+                    <div class="text-center max-w-3xl mb-12">
+                        <h1
+                            class="text-white text-5xl sm:text-6xl md:text-7xl font-black leading-tight tracking-tight mb-4 drop-shadow-xl">
+                            Journey Comfortably <br /> <span
+                                class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-200">Across
+                                the Country.</span>
+                        </h1>
+                        <p class="text-blue-100/80 text-lg sm:text-xl font-medium max-w-xl mx-auto drop-shadow-md">
+                            Experience scenic rides with premium comfort. Book your seat today.
+                        </p>
+                    </div>
+                    <div class="w-full max-w-5xl glass-panel rounded-2xl p-2 sm:p-4 mb-16 shadow-2xl">
+                        <div class="flex flex-col lg:flex-row gap-4 lg:gap-2 items-center">
+                            <div class="relative w-full flex-1 group">
+                                <div
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-primary group-hover:scale-110 transition-transform pointer-events-none z-10">
+                                    <span class="material-symbols-outlined">trip_origin</span>
+                                </div>
+                                <div
+                                    class="absolute left-12 top-2 text-xs text-white/60 font-medium pointer-events-none z-10">
+                                    From</div>
+                                <input id="fromInput"
+                                    class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white placeholder-white/30 text-lg font-medium cursor-text"
+                                    placeholder="Origin City" type="text" value="Chennai, TN" />
+                            </div>
+                            <button id="swapBtn"
+                                class="hidden lg:flex size-10 items-center justify-center rounded-full bg-white/20 text-primary hover:bg-primary hover:text-white transition-all -ml-6 -mr-6 z-10 border border-white/20 backdrop-blur-md shadow-lg shadow-black/50 group/swap">
+                                <span
+                                    class="material-symbols-outlined transition-transform duration-300 group-hover/swap:rotate-180">sync_alt</span>
+                            </button>
+                            <div class="relative w-full flex-1 group">
+                                <div
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-primary group-hover:scale-110 transition-transform pointer-events-none z-10">
+                                    <span class="material-symbols-outlined">location_on</span>
+                                </div>
+                                <div
+                                    class="absolute left-12 top-2 text-xs text-white/60 font-medium pointer-events-none z-10">
+                                    To</div>
+                                <input id="toInput"
+                                    class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white placeholder-white/30 text-lg font-medium cursor-text"
+                                    placeholder="Destination City" type="text" value="Bangalore, KA" />
+                            </div>
+                            <div id="dateTrigger" class="relative w-full lg:w-[220px] block cursor-pointer group/date"
+                                onclick="toggleCalendar(true, 'home')">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                                    <span class="material-symbols-outlined">calendar_month</span>
+                                </div>
+                                <div class="absolute left-12 top-2 text-xs text-white/60 font-medium">Departure</div>
+                                <input id="homeDateDisplay"
+                                    class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white placeholder-white/30 text-lg font-medium cursor-pointer"
+                                    placeholder="Select Date" type="text" value="Fri, Oct 24" readonly />
+                            </div>
+                            <div class="relative w-full lg:w-[180px] block group">
+                                <div
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none z-10">
+                                    <span class="material-symbols-outlined">person</span>
+                                </div>
+                                <div
+                                    class="absolute left-12 top-2 text-xs text-white/60 font-medium pointer-events-none z-10">
+                                    Passengers</div>
+                                <select
+                                    class="glass-input w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white text-lg font-medium appearance-none cursor-pointer">
+                                    <option class="bg-slate-800">1 Passenger</option>
+                                    <option class="bg-slate-800">2 Passengers</option>
+                                    <option class="bg-slate-800">3 Passengers</option>
+                                </select>
+                            </div>
+                            <button onclick="navigateTo('search')"
+                                class="w-full lg:w-auto h-[72px] px-8 rounded-xl bg-primary hover:bg-blue-500 text-white font-bold text-lg shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">search</span>
+                                <span>Find Tickets</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- Sign In View -->
+        <section id="view-signin" class="view hidden">
+            <main
+                class="flex-1 flex items-center justify-center min-h-[90vh] p-4 bg-background-dark/80 bg-cover bg-center"
+                style="background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000');">
+                <div class="w-full max-w-md glass-panel rounded-3xl p-8 sm:p-10">
+                    <div class="text-center mb-10">
+                        <h1 class="text-3xl font-bold mb-2">Welcome Back</h1>
+                        <p class="text-white/60">Log in to your account to manage your trips</p>
+                    </div>
+                    <form class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-white/80 ml-1">Email Address</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">mail</span>
+                                <input type="email" placeholder="name@example.com"
+                                    class="glass-input w-full h-14 rounded-2xl pl-12 pr-4 text-white placeholder-white/20">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-white/80 ml-1">Password</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">lock</span>
+                                <input type="password" placeholder="••••••••"
+                                    class="glass-input w-full h-14 rounded-2xl pl-12 pr-4 text-white placeholder-white/20">
+                            </div>
+                        </div>
+                        <button type="button" onclick="navigateTo('dashboard')"
+                            class="w-full h-14 bg-primary hover:bg-blue-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group">
+                            <span>Sign In</span>
+                            <span
+                                class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                    </form>
+                </div>
+            </main>
+        </section>
+
+        <!-- Search Results View -->
+        <section id="view-search" class="view hidden">
+            <div class="flex flex-1 w-full max-w-[1440px] mx-auto pt-20">
+                <!-- Sidebar Filters -->
+                <aside
+                    class="w-80 hidden lg:flex flex-col gap-6 p-6 border-r border-slate-200 dark:border-[#283239] h-[calc(100vh-80px)] sticky top-[80px] overflow-y-auto hide-scrollbar">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold">Filters</h3>
+                        <button id="resetFilters"
+                            class="text-sm text-primary font-medium hover:underline">Reset</button>
+                    </div>
+                    <!-- Departure Time Segments -->
+                    <div class="flex flex-col gap-3">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            Departure Time</p>
+                        <div class="grid grid-cols-2 gap-2" id="timeFilters">
+                            <button data-time="morning"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">wb_twilight</span>
+                                <span class="text-xs font-medium">Morning</span>
+                            </button>
+                            <button data-time="afternoon"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-primary bg-primary/10 dark:bg-primary/20 transition-all active-filter">
+                                <span class="material-symbols-outlined text-primary mb-1">wb_sunny</span>
+                                <span class="text-xs font-bold text-primary">Afternoon</span>
+                            </button>
+                            <button data-time="evening"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">nights_stay</span>
+                                <span class="text-xs font-medium">Evening</span>
+                            </button>
+                            <button data-time="night"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">bedtime</span>
+                                <span class="text-xs font-medium">Night</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Price Range -->
+                    <div class="flex flex-col gap-4">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Price
+                            Range</p>
+                        <div class="px-2">
+                            <input id="priceRange" type="range" min="25" max="85" value="85"
+                                class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" />
+                            <div class="flex justify-between text-sm font-medium mt-1">
+                                <span>₹25</span>
+                                <span id="priceLabel">Max: ₹85</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Toggles -->
+                    <div class="flex flex-col gap-4">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Class
+                            & Amenities</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Express Route</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input id="filterExpress" checked class="amenity-filter sr-only peer" type="checkbox"
+                                    value="express" />
+                                <div
+                                    class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Luxury Class</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input id="filterLuxury" class="amenity-filter sr-only peer" type="checkbox"
+                                    value="luxury" />
+                                <div
+                                    class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+                <!-- Main Content -->
+                <main class="flex-1 p-4 md:p-8 flex flex-col gap-6">
+                    <div
+                        class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+                        <div>
+                            <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                                Chennai → Bangalore</h1>
+                            <p id="resultCountLabel" class="text-slate-500 dark:text-slate-400 mt-1.5 font-medium">34
+                                Buses Found</p>
+                        </div>
+                        <!-- Search Modification Bar -->
+                        <div
+                            class="flex items-center bg-slate-100 dark:bg-card-dark rounded-2xl p-1.5 border border-slate-200 dark:border-border-dark shadow-inner">
+                            <button
+                                class="px-4 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5">
+                                <span class="text-xs uppercase font-black text-slate-500 block mb-0.5">Origin</span>
+                                <span class="text-sm font-bold text-white">Chennai</span>
+                            </button>
+                            <button
+                                class="px-4 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5">
+                                <span class="text-xs uppercase font-black text-slate-500 block mb-0.5">Dest</span>
+                                <span class="text-sm font-bold text-white">Bangalore</span>
+                            </button>
+                            <button class="px-5 py-2 hover:bg-white/5 rounded-xl transition-all group"
+                                onclick="toggleCalendar(true, 'search')">
+                                <span
+                                    class="text-xs uppercase font-black text-primary block mb-0.5 group-hover:scale-105 transition-transform">Departure</span>
+                                <span id="searchDateDisplay" class="text-sm font-bold text-white">Sat, Oct 24</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Bus Cards -->
+                    <div id="busList" class="flex flex-col gap-6">
+                        <!-- Bus Card 1 -->
+                        <div data-time="morning" data-price="42" data-express="true" data-luxury="true"
+                            data-single="false" data-cancellation="false"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">Business
+                                        Class</span>
+                                    <span class="font-bold text-lg">BoltBus Express</span>
+                                </div>
+                                <span class="text-2xl font-bold text-primary">₹42.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left">
+                                    <span class="block text-xl font-bold">08:30 AM</span>
+                                    <span class="text-sm text-slate-500">Chennai</span>
+                                </div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">4h 15m</div>
+                                <div class="text-center md:text-right">
+                                    <span class="block text-xl font-bold">12:45 PM</span>
+                                    <span class="text-sm text-slate-500">Bangalore</span>
+                                </div>
+                            </div>
+                            <button onclick="navigateTo('seat')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                        <!-- Bus Card 2 -->
+                        <div data-time="afternoon" data-price="55" data-express="false" data-luxury="true"
+                            data-single="false" data-cancellation="true"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300">Quiet
+                                        Zone</span>
+                                    <span class="font-bold text-lg">NeoBus Lines</span>
+                                </div>
+                                <span class="text-2xl font-bold text-primary">₹55.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left">
+                                    <span class="block text-xl font-bold">02:15 PM</span>
+                                    <span class="text-sm text-slate-500">Chennai</span>
+                                </div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">3h 50m</div>
+                                <div class="text-center md:text-right">
+                                    <span class="block text-xl font-bold">06:05 PM</span>
+                                    <span class="text-sm text-slate-500">Bangalore</span>
+                                </div>
+                            </div>
+                            <button onclick="navigateTo('seat')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                        <!-- Bus Card 3 -->
+                        <div data-time="evening" data-price="35" data-express="true" data-luxury="false"
+                            data-single="true" data-cancellation="false"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">EcoRider</span>
+                                    <span class="font-bold text-lg">EcoRider Lines</span>
+                                </div>
+                                <span class="text-2xl font-bold text-primary">₹35.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left">
+                                    <span class="block text-xl font-bold">05:00 PM</span>
+                                    <span class="text-sm text-slate-500">Chennai</span>
+                                </div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">5h 10m</div>
+                                <div class="text-center md:text-right">
+                                    <span class="block text-xl font-bold">10:10 PM</span>
+                                    <span class="text-sm text-slate-500">Bangalore</span>
+                                </div>
+                            </div>
+                            <button onclick="navigateTo('seat')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                        <!-- Bus Card 4 -->
+                        <div data-time="night" data-price="65" data-express="true" data-luxury="true"
+                            data-single="false" data-cancellation="true"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">Premium
+                                        Direct</span>
+                                    <span class="font-bold text-lg">StarTravel Express</span>
+                                </div>
+                                <span class="text-2xl font-bold text-primary">₹65.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left">
+                                    <span class="block text-xl font-bold">11:30 PM</span>
+                                    <span class="text-sm text-slate-500">Chennai</span>
+                                </div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">4h 45m</div>
+                                <div class="text-center md:text-right">
+                                    <span class="block text-xl font-bold">04:15 AM</span>
+                                    <span class="text-sm text-slate-500">Bangalore</span>
+                                </div>
+                            </div>
+                            <button onclick="navigateTo('seat')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+        <!-- Seat Selection View -->
+        <section id="view-seat" class="view hidden">
+            <div class="flex flex-1 w-full max-w-[1440px] mx-auto pt-20 h-[calc(100vh-80px)] overflow-hidden">
+                <!-- Left Side: Interactive 3D Bus View -->
+                <div
+                    class="flex-1 relative bg-[#111518] perspective-container flex flex-col items-center justify-start overflow-y-auto hide-scrollbar py-10 select-none">
+                    <!-- Bus Chassis Wrapper -->
+                    <div
+                        class="bus-floor relative bg-[#1b2227] rounded-t-[3rem] rounded-b-xl border-x-4 border-t-4 border-slate-700 p-8 w-[340px] min-h-[700px]">
+                        <!-- Driver Area -->
+                        <div class="flex justify-end mb-12 opacity-50">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-4xl text-slate-500">sports_esports</span>
+                                <span class="text-xs font-mono uppercase tracking-widest text-slate-500">Driver</span>
+                            </div>
+                        </div>
+                        <!-- Seats Grid -->
+                        <div id="seatGrid" class="grid grid-cols-5 gap-y-6 gap-x-2">
+                            <!-- Window labels -->
+                            <div class="col-span-2 text-center text-xs text-slate-500 font-medium mb-2">Window</div>
+                            <div class="col-span-1"></div>
+                            <div class="col-span-2 text-center text-xs text-slate-500 font-medium mb-2">Window</div>
+
+                            <!-- Dynamically generate seats or hardcode key ones for demo -->
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-booked opacity-50 cursor-not-allowed flex items-center justify-center"><span
+                                    class="material-symbols-outlined text-white/30 text-lg">close</span></button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-booked opacity-50 cursor-not-allowed flex items-center justify-center"><span
+                                    class="material-symbols-outlined text-white/30 text-lg">close</span></button>
+                            <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">1</div>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">1C</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">1D</button>
+
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-ladies hover:brightness-110 flex items-center justify-center text-xs font-bold text-white/90 ring-1 ring-purple-400/30">2A</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-ladies hover:brightness-110 flex items-center justify-center text-xs font-bold text-white/90 ring-1 ring-purple-400/30">2B</button>
+                            <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">2</div>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">2C</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">2D</button>
+
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">3A</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">3B</button>
+                            <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">3</div>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">3C</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">3D</button>
+
+                            <button id="demoSeat"
+                                onclick="this.classList.toggle('selected'); this.classList.toggle('bg-primary'); document.getElementById('seatSelectionCount').textContent = this.classList.contains('selected') ? '1 seat selected' : '0 seats selected';"
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">4A</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">4B</button>
+                            <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">4</div>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">4C</button>
+                            <button
+                                class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">4D</button>
+                        </div>
+                    </div>
+                    <!-- Legend -->
+                    <div
+                        class="mt-8 bg-[#1b2227]/90 backdrop-blur border border-white/10 rounded-full px-5 py-3 flex gap-6 shadow-xl z-20">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-seat-available"></div><span
+                                class="text-xs text-slate-300">Available</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-primary"></div><span
+                                class="text-xs text-white">Selected</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-seat-ladies"></div><span
+                                class="text-xs text-slate-300">Ladies</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-seat-booked opacity-50"></div><span
+                                class="text-xs text-slate-500">Booked</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right Side: Sidebar & Details -->
+                <div class="w-[380px] bg-[#111518] border-l border-white/5 flex flex-col relative z-20">
+                    <div class="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
+                        <div class="space-y-2">
+                            <h2 class="text-lg font-bold text-white">Your Selection</h2>
+                            <p id="seatSelectionCount" class="text-slate-400 text-sm">0 seats selected</p>
+                        </div>
+                        <!-- Active Seat Card -->
+                        <div
+                            class="bg-[#1b2227] rounded-xl p-4 border border-white/5 shadow-lg relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-white">Seat 4A</h3>
+                                    <p class="text-primary text-sm font-medium">Window Seat • Left Side</p>
+                                </div>
+                                <div class="text-right"><span
+                                        class="block text-2xl font-bold text-white">₹45</span><span
+                                        class="text-xs text-slate-400">per person</span></div>
+                            </div>
+                            <!-- View Preview -->
+                            <div
+                                class="relative rounded-lg overflow-hidden border border-white/10 group cursor-pointer transition-transform active:scale-[0.98]">
+                                <div class="aspect-video w-full bg-cover bg-center"
+                                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBOYNkumeTbwBAVxXPyCYcoKFWyYM4Qsut1qaGGduFC_A3snTYev4cElJadDz0IymJnUbBk9e74UvFQOH_8boGOgkQzjByFAy1EKiXaEtDBpnBM-_jyJtCJn84xeD4ysXzNhQ_hhhtwAr558gx9ujpzr1HK_AijmmwEgcPtGyEZfk7q5LOeTh3rx5U1WQjLEePH2p2ws9tOnL7ANIVfbpafBi_IivIKdiofhEIdsaSdN1O2BaNW7axG_oq-PvjS8dbV0y8_zKAqjZ4B');">
+                                </div>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                <div class="absolute bottom-3 left-3">
+                                    <p class="text-white font-medium text-sm">Mountain Valley View</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Actions -->
+                    <div class="p-6 bg-[#151c24] border-t border-white/5">
+                        <div class="flex justify-between items-center mb-4"><span class="text-slate-400 text-sm">Total
+                                Amount</span><span class="text-2xl font-bold text-white">₹45.00</span></div>
+                        <button onclick="navigateTo('passenger')"
+                            class="w-full bg-primary hover:bg-blue-500 text-white h-12 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 group">
+                            <span>Confirm Seats</span>
+                            <span
+                                class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Passenger Details View -->
+        <section id="view-passenger" class="view hidden">
+            <div class="flex flex-1 w-full max-w-[1200px] mx-auto px-4 md:px-8 py-24">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative w-full">
+                    <!-- Form Column -->
+                    <div class="lg:col-span-8 flex flex-col gap-8">
+                        <div class="flex flex-col gap-2">
+                            <h1 class="text-3xl font-black">Passenger Details</h1>
+                            <p class="text-slate-500 font-normal">Complete your information to secure your seat.</p>
+                        </div>
+                        <!-- Form Card -->
+                        <div
+                            class="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-6 md:p-8 shadow-sm">
+                            <h2 class="text-xl font-bold mb-6 pb-4 border-b border-slate-100 dark:border-border-dark">
+                                Passenger 1 Info (Seat 4A)</h2>
+                            <form class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="col-span-1 md:col-span-2 space-y-2">
+                                    <label class="block text-sm font-medium">Full Name</label>
+                                    <input
+                                        class="w-full h-12 px-4 rounded-lg bg-slate-50 dark:bg-[#111518] border border-slate-300 dark:border-border-dark text-white outline-none focus:ring-2 focus:ring-primary"
+                                        placeholder="Alex Doe" type="text" value="Alex Doe" />
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Age</label>
+                                    <input
+                                        class="w-full h-12 px-4 rounded-lg bg-slate-50 dark:bg-[#111518] border border-slate-300 dark:border-border-dark text-white outline-none focus:ring-2 focus:ring-primary"
+                                        placeholder="28" type="number" value="28" />
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium">Gender</label>
+                                    <div
+                                        class="flex rounded-lg bg-slate-100 dark:bg-[#111518] p-1 h-12 border border-slate-200 dark:border-border-dark">
+                                        <button id="gender-male"
+                                            class="gender-btn flex-1 rounded bg-white dark:bg-slate-700 shadow-sm text-sm font-medium text-slate-900 dark:text-white transition-all"
+                                            type="button">Male</button>
+                                        <button id="gender-female"
+                                            class="gender-btn flex-1 rounded text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-white transition-all"
+                                            type="button">Female</button>
+                                        <button id="gender-other"
+                                            class="gender-btn flex-1 rounded text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-white transition-all"
+                                            type="button">Other</button>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 md:col-span-2 space-y-2">
+                                    <label class="block text-sm font-medium">Email Address</label>
+                                    <input
+                                        class="w-full h-12 px-4 rounded-lg bg-slate-50 dark:bg-[#111518] border border-slate-300 dark:border-border-dark text-white outline-none focus:ring-2 focus:ring-primary"
+                                        placeholder="alex@example.com" type="email" value="alex@example.com" />
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- Summary Column -->
+                    <div class="lg:col-span-4">
+                        <div
+                            class="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-6 shadow-sm sticky top-24">
+                            <h2 class="text-lg font-bold mb-6">Journey Summary</h2>
+                            <div class="flex flex-col gap-4 mb-6">
+                                <div>
+                                    <p class="text-xs text-slate-500 uppercase">From</p>
+                                    <p class="text-base font-bold">Chennai, TN</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 uppercase">To</p>
+                                    <p class="text-base font-bold">Bangalore, KA</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-[#111518] rounded-lg p-4 mb-6">
+                                <div class="flex justify-between text-base font-bold">
+                                    <span>Total</span><span>₹51.50</span>
+                                </div>
+                            </div>
+                            <button onclick="navigateTo('payment')"
+                                class="w-full bg-primary hover:bg-blue-500 text-white font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-2">
+                                <span>Proceed to Payment</span>
+                                <span class="material-symbols-outlined">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Payment View -->
+        <section id="view-payment" class="view hidden">
+            <div class="flex flex-1 w-full max-w-[1200px] mx-auto px-4 md:px-8 py-24">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative w-full">
+                    <!-- Left Column: Payment Form -->
+                    <div class="lg:col-span-8 flex flex-col gap-8">
+                        <div>
+                            <h1 class="text-3xl font-black mb-2">Secure Checkout</h1>
+                            <p class="text-slate-500">Complete your purchase securely to reserve your seat.</p>
+                        </div>
+                        <!-- Methods -->
+                        <div class="grid grid-cols-3 gap-4" id="payment-methods">
+                            <button id="method-card"
+                                class="payment-method-btn relative flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-primary bg-primary/10 dark:bg-primary/5 cursor-pointer transition-all active-method">
+                                <div class="absolute top-2 right-2 text-primary check-icon"><span
+                                        class="material-symbols-outlined !text-xl filled">check_circle</span></div>
+                                <span class="material-symbols-outlined !text-4xl text-primary">credit_card</span>
+                                <span class="font-medium text-sm text-primary">Card</span>
+                            </button>
+                            <button id="method-wallet"
+                                class="payment-method-btn flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-pointer">
+                                <div class="absolute top-2 right-2 text-primary check-icon hidden"><span
+                                        class="material-symbols-outlined !text-xl filled">check_circle</span></div>
+                                <span
+                                    class="material-symbols-outlined !text-4xl text-slate-700 dark:text-slate-300">account_balance_wallet</span>
+                                <span class="font-medium text-sm text-slate-600 dark:text-slate-300">Wallet</span>
+                            </button>
+                            <button id="method-upi"
+                                class="payment-method-btn flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-pointer">
+                                <div class="absolute top-2 right-2 text-primary check-icon hidden"><span
+                                        class="material-symbols-outlined !text-xl filled">check_circle</span></div>
+                                <span
+                                    class="material-symbols-outlined !text-4xl text-slate-700 dark:text-slate-300">currency_rupee</span>
+                                <span class="font-medium text-sm text-slate-600 dark:text-slate-300">UPI</span>
+                            </button>
+                        </div>
+                        <!-- Forms -->
+                        <div id="payment-forms">
+                            <div id="form-card" class="payment-form space-y-6">
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <label class="text-sm font-medium">Card Number</label>
+                                        <input
+                                            class="w-full px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white"
+                                            placeholder="0000 0000 0000 0000" type="text" />
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <input
+                                            class="w-full px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white"
+                                            placeholder="MM / YY" type="text" />
+                                        <input
+                                            class="w-full px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white"
+                                            placeholder="CVV" type="text" />
+                                    </div>
+                                </div>
+                                <button onclick="navigateTo('success')"
+                                    class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all">Pay
+                                    ₹51.50</button>
+                            </div>
+                            <div id="form-wallet" class="payment-form hidden space-y-4">
+                                <div class="p-4 border rounded-xl dark:border-slate-700">Amazon Pay</div>
+                                <div class="p-4 border rounded-xl dark:border-slate-700">Paytm</div>
+                                <button onclick="navigateTo('success')"
+                                    class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all">Pay
+                                    ₹51.50</button>
+                            </div>
+                            <div id="form-upi" class="payment-form hidden space-y-4">
+                                <input
+                                    class="w-full px-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-white"
+                                    placeholder="username@upi" type="text" />
+                                <button onclick="navigateTo('success')"
+                                    class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all">Pay
+                                    ₹51.50</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Column -->
+                    <div class="lg:col-span-4">
+                        <div
+                            class="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-6 shadow-sm sticky top-24">
+                            <h2 class="text-lg font-bold mb-4">Trip Summary</h2>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span>Chennai</span><span>08:00 AM</span></div>
+                                <div class="flex justify-between"><span>Bangalore</span><span>12:00 PM</span></div>
+                                <div
+                                    class="pt-4 border-t border-slate-700 flex justify-between font-bold text-lg text-primary">
+                                    <span>Total</span><span>₹51.50</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Success View -->
+        <section id="view-success" class="view hidden">
+            <div class="flex flex-col items-center justify-center min-h-screen py-24 px-4 bg-background-dark">
+                <div class="text-center mb-10">
+                    <div
+                        class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 text-green-500 mb-6">
+                        <span class="material-symbols-outlined !text-5xl">check_circle</span>
+                    </div>
+                    <h2 class="text-4xl font-extrabold mb-3">Booking Confirmed!</h2>
+                    <p class="text-slate-400">Your ticket is ready and has been sent to your email.</p>
+                </div>
+                <!-- Ticket -->
+                <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                    <div class="p-8 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
+                        <div class="flex justify-between mb-8">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase">Operator</p>
+                                <p class="font-bold">MegaBus Express</p>
+                            </div>
+                            <div class="bg-white/10 px-3 py-1 rounded-full text-xs">Business</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-8 mb-6">
+                            <div>
+                                <p class="text-3xl font-bold">CHN</p>
+                                <p class="text-slate-400 text-sm">Chennai</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold">BLR</p>
+                                <p class="text-slate-400 text-sm">Bangalore</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase">Seat</p>
+                                <p class="font-bold text-primary">4A</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-400 uppercase">Date</p>
+                                <p class="font-bold">Oct 24</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-slate-400 uppercase">Time</p>
+                                <p class="font-bold">08:00 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Perforation -->
+                    <div class="relative flex items-center justify-between -mt-4">
+                        <div class="w-8 h-8 rounded-full bg-background-dark -ml-4"></div>
+                        <div class="border-t-2 border-dashed border-slate-600 w-full mx-2 opacity-50"></div>
+                        <div class="w-8 h-8 rounded-full bg-background-dark -mr-4"></div>
+                    </div>
+                    <!-- QR Area -->
+                    <div class="p-8 flex flex-col items-center">
+                        <div class="bg-white p-3 rounded-xl mb-6">
+                            <span class="material-symbols-outlined !text-[120px] text-black">qr_code_2</span>
+                        </div>
+                        <button onclick="navigateTo('home')"
+                            class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all">Back
+                            to Home</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard View -->
+        <section id="view-dashboard" class="view hidden">
+            <div class="flex flex-col flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-16 py-24">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-1">Welcome back, Alex</h1>
+                        <p class="text-slate-500 text-sm">Here's what's happening with your journey today.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div
+                        class="lg:col-span-8 bg-white dark:bg-card-dark rounded-xl border border-border-dark overflow-hidden shadow-sm">
+                        <div class="p-5 border-b border-border-dark flex items-center justify-between">
+                            <h2 class="text-lg font-bold">Current Trip: CHN → BLR</h2>
+                            <span
+                                class="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full uppercase">En
+                                Route</span>
+                        </div>
+                        <div class="h-[280px] bg-[#0f161b] relative overflow-hidden">
+                            <div class="absolute inset-0 opacity-50 bg-cover bg-center"
+                                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCOqpzwwLLn25ALkVP7swTyekQHjXR3FuiYYt8iu7Rw2jxhQ_hhhaxYWbBE6H7y4C_Ho3STWCbgA4OoFLaRn2Jfq0HdkEsyowsOylVfon0Gsebo9myGH-2NM0K7Sm04HErGnTCJt5sfaNpxr5Dookqvyk5eOSkZ5Dsf4O4boln90v-qxpRcrnjECQVRHT3cUmXeCawFJnJ1KN8PuL7jeOavH-gbyb8jtA1jZuk1_PtJHAzR2iN40w3px3JamoDALYp0OtMx6jWd9FHN')">
+                            </div>
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                <div
+                                    class="size-12 bg-primary rounded-full flex items-center justify-center animate-pulse">
+                                    <span class="material-symbols-outlined text-white">directions_bus</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between mb-2"><span class="text-sm font-medium">Trip
+                                    Progress</span><span class="font-bold">65%</span></div>
+                            <div class="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 flex flex-col gap-6">
+                        <div class="p-5 bg-white dark:bg-card-dark rounded-xl border border-border-dark">
+                            <p class="text-slate-400 text-sm">Total Distance</p>
+                            <h3 class="text-3xl font-bold">3,450 km</h3>
+                        </div>
+                        <div class="p-5 bg-white dark:bg-card-dark rounded-xl border border-border-dark">
+                            <p class="text-slate-400 text-sm">CO2 Saved</p>
+                            <h3 class="text-3xl font-bold">45 kg</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Help & Support View -->
+        <section id="view-help" class="view hidden">
+            <div class="flex flex-col flex-1 w-full max-w-4xl mx-auto px-4 py-24">
+                <h1 class="text-4xl font-bold mb-8">How can we help?</h1>
+                <div class="grid md:grid-cols-2 gap-6 mb-12">
+                    <div class="p-6 bg-white dark:bg-card-dark rounded-2xl border border-border-dark shadow-sm">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-4">confirmation_number</span>
+                        <h3 class="text-xl font-bold">Booking Issues</h3>
+                        <p class="text-slate-500 text-sm mt-2">Facing trouble while booking or payment? We're here to
+                            help.</p>
+                    </div>
+                    <div class="p-6 bg-white dark:bg-card-dark rounded-2xl border border-border-dark shadow-sm">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-4">support_agent</span>
+                        <h3 class="text-xl font-bold">Contact Support</h3>
+                        <p class="text-slate-500 text-sm mt-2">Chat with our 24/7 support team for immediate assistance.
+                        </p>
+                    </div>
+                </div>
+                <section class="space-y-6">
+                    <h2 class="text-2xl font-bold">Frequently Asked Questions</h2>
+                    <div class="space-y-4">
+                        <details class="group p-4 bg-white dark:bg-card-dark rounded-xl border border-border-dark">
+                            <summary class="flex justify-between items-center cursor-pointer list-none font-medium">How
+                                do I download my ticket?<span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                            </summary>
+                            <p class="mt-4 text-sm text-slate-500">After booking, your ticket is available in the "My
+                                Trips" dashboard. You can download it as a PDF or add it to your Apple/Google Wallet.
+                            </p>
+                        </details>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Global Calendar Modal -->
+    <div id="calendar-overlay"
+        class="fixed inset-0 z-[100] items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div class="calendar-modal w-full max-w-[400px] rounded-[2rem] overflow-hidden scale-90 opacity-0"
+            id="calendar-content">
+            <!-- Modal Header -->
+            <div class="p-8 pb-4 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1.5">Select Date</p>
+                    <h3 class="text-2xl font-black text-white flex items-center gap-2">
+                        October 2024
+                        <span class="material-symbols-outlined text-primary"
+                            style="font-size: 20px;">calendar_month</span>
+                    </h3>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        class="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-all border border-white/5"
+                        onclick="changeMonth(-1)">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    <button
+                        class="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-all border border-white/5"
+                        onclick="changeMonth(1)">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="p-8 pt-4">
+                <div class="grid grid-cols-7 gap-1 mb-4 opacity-30">
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Mo</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Tu</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">We</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Th</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Fr</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Sa</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Su</div>
+                </div>
+                <div class="grid grid-cols-7 gap-2" id="calendar-days-grid">
+                    <!-- Week 1 -->
+                    <div class="calendar-day-btn disabled text-white/20">30</div>
+                    <div class="calendar-day-btn text-white/60">1</div>
+                    <div class="calendar-day-btn text-white/60">2</div>
+                    <div class="calendar-day-btn text-white/60">3</div>
+                    <div class="calendar-day-btn active">4</div>
+                    <div class="calendar-day-btn text-white/60">5</div>
+                    <div class="calendar-day-btn text-white/60">6</div>
+                    <!-- Week 2 -->
+                    <div class="calendar-day-btn text-white/60">7</div>
+                    <div class="calendar-day-btn text-white/60">8</div>
+                    <div class="calendar-day-btn text-white/60">9</div>
+                    <div class="calendar-day-btn text-white/60">10</div>
+                    <div class="calendar-day-btn text-white/60">11</div>
+                    <div class="calendar-day-btn text-white/60">12</div>
+                    <div class="calendar-day-btn text-white/60">13</div>
+                    <!-- Week ... -->
+                    <div class="col-span-7 py-2 flex items-center justify-center gap-2 opacity-20">
+                        <div class="h-px bg-white/20 flex-1"></div>
+                        <span class="text-[10px] font-bold">...</span>
+                        <div class="h-px bg-white/20 flex-1"></div>
+                    </div>
+                    <!-- Target Date Row -->
+                    <div class="calendar-day-btn text-white/60">21</div>
+                    <div class="calendar-day-btn text-white/60">22</div>
+                    <div class="calendar-day-btn text-white/60">23</div>
+                    <div class="calendar-day-btn text-white/60 hover:active">24</div>
+                    <div class="calendar-day-btn text-white/60">25</div>
+                    <div class="calendar-day-btn text-white/60">26</div>
+                    <div class="calendar-day-btn text-white/60">27</div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-8 bg-white/5 flex gap-4">
+                <button
+                    class="flex-1 h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all border border-white/10"
+                    onclick="toggleCalendar(false)">Cancel</button>
+                <button
+                    class="flex-1 h-14 rounded-2xl bg-primary hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-xl shadow-primary/20"
+                    onclick="applyCalendarSelection()">Apply Selection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Footer -->
+    <footer class="bg-background-dark pt-16 pb-8 border-t border-white/5">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-slate-500 text-sm">© 2024 BusBooker Inc. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Router Logic
+        function navigateTo(viewId) {
+            console.log('Navigating to:', viewId);
+
+            // Close calendar if open
+            toggleCalendar(false);
+
+            // Hide all views
+            const views = document.querySelectorAll('.view');
+            views.forEach(v => {
+                v.classList.add('hidden');
+                v.style.opacity = '0';
+            });
+            // ... (rest of the content handled naturally by the tool if possible, but I should provide enough context)
+
+            // Show target view
+            const targetView = document.getElementById('view-' + viewId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                setTimeout(() => {
+                    targetView.style.opacity = '1';
+                    // Re-run any initialization logic for specific views
+                    if (viewId === 'search') initFilters();
+                    if (viewId === 'seat') initSeatSelection();
+                    if (viewId === 'passenger') initPassengerLogic();
+                    if (viewId === 'payment') initPaymentLogic();
+                }, 50);
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Handle header transparency
+            const header = document.getElementById('main-header');
+            if (viewId === 'home') {
+                header.classList.add('bg-gradient-to-b', 'from-background-dark/90', 'to-transparent');
+                header.classList.remove('bg-background-dark', 'shadow-lg');
+            } else {
+                header.classList.remove('bg-gradient-to-b', 'from-background-dark/90', 'to-transparent');
+                header.classList.add('bg-background-dark', 'shadow-lg');
+            }
+
+            // Success view hides header
+            if (viewId === 'success') header.classList.add('hidden');
+            else header.classList.remove('hidden');
+        }
+
+        // Search Filter Logic
+        function initFilters() {
+            const timeButtons = document.querySelectorAll('.time-filter');
+            const amenityToggles = document.querySelectorAll('.amenity-filter');
+            const busCards = document.querySelectorAll('.bus-card');
+            const resetBtn = document.getElementById('resetFilters');
+            const priceRange = document.getElementById('priceRange');
+            const priceLabel = document.getElementById('priceLabel');
+            const resultCountLabel = document.getElementById('resultCountLabel');
+
+            function filterBuses() {
+                const activeTimes = Array.from(timeButtons)
+                    .filter(btn => btn.classList.contains('active-filter'))
+                    .map(btn => btn.dataset.time);
+
+                const activeAmenities = Array.from(amenityToggles)
+                    .filter(input => input.checked)
+                    .map(input => input.value);
+
+                const maxPrice = parseInt(priceRange.value);
+                if (priceLabel) priceLabel.textContent = `Max: ₹${maxPrice}`;
+
+                let visibleCount = 0;
+                busCards.forEach(card => {
+                    const cardTime = card.dataset.time;
+                    const cardPrice = parseInt(card.dataset.price);
+
+                    const matchesTime = activeTimes.length === 0 || activeTimes.includes(cardTime);
+                    const matchesPrice = cardPrice <= maxPrice;
+
+                    let matchesAmenities = true;
+                    if (activeAmenities.includes('express') && card.dataset.express !== 'true') matchesAmenities = false;
+                    if (activeAmenities.includes('luxury') && card.dataset.luxury !== 'true') matchesAmenities = false;
+
+                    if (matchesTime && matchesPrice && matchesAmenities) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (resultCountLabel) {
+                    resultCountLabel.textContent = `${visibleCount} Buses Found • Sat, Oct 24`;
+                }
+            }
+
+            timeButtons.forEach(btn => {
+                btn.onclick = () => {
+                    btn.classList.toggle('active-filter');
+                    btn.classList.toggle('border-primary');
+                    btn.classList.toggle('bg-primary/10');
+                    btn.classList.toggle('dark:bg-primary/20');
+                    filterBuses();
+                };
+            });
+
+            amenityToggles.forEach(toggle => toggle.onchange = filterBuses);
+            if (priceRange) priceRange.oninput = filterBuses;
+            if (resetBtn) {
+                resetBtn.onclick = () => {
+                    timeButtons.forEach(btn => btn.classList.remove('active-filter', 'border-primary', 'bg-primary/10', 'dark:bg-primary/20'));
+                    amenityToggles.forEach(t => t.checked = false);
+                    if (priceRange) priceRange.value = 85;
+                    filterBuses();
+                };
+            }
+
+            filterBuses();
+        }
+
+        // Seat Selection Logic
+        function initSeatSelection() {
+            const seats = document.querySelectorAll('.seat-3d:not(.cursor-not-allowed)');
+            const countLabel = document.getElementById('seatSelectionCount');
+
+            seats.forEach(seat => {
+                seat.onclick = () => {
+                    seat.classList.toggle('selected');
+                    seat.classList.toggle('bg-primary');
+                    seat.classList.toggle('bg-seat-available');
+
+                    const selectedCount = document.querySelectorAll('.seat-3d.selected').length;
+                    countLabel.textContent = selectedCount + (selectedCount === 1 ? ' seat selected' : ' seats selected');
+                };
+            });
+        }
+
+        // Passenger Details Logic
+        function initPassengerLogic() {
+            const genderButtons = document.querySelectorAll('.gender-btn');
+            genderButtons.forEach(btn => {
+                btn.onclick = () => {
+                    genderButtons.forEach(b => {
+                        b.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                        b.classList.add('text-slate-500', 'dark:text-slate-400');
+                    });
+                    btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                    btn.classList.remove('text-slate-500', 'dark:text-slate-400');
+                };
+            });
+        }
+
+        // Payment Switching Logic
+        function initPaymentLogic() {
+            const methodButtons = document.querySelectorAll('.payment-method-btn');
+            const paymentForms = document.querySelectorAll('.payment-form');
+
+            methodButtons.forEach(btn => {
+                btn.onclick = () => {
+                    methodButtons.forEach(b => {
+                        b.classList.remove('border-2', 'border-primary', 'bg-primary/10', 'dark:bg-primary/5', 'active-method');
+                        b.classList.add('border', 'border-slate-200', 'dark:border-slate-700', 'bg-white', 'dark:bg-slate-800');
+                        b.querySelector('.check-icon').classList.add('hidden');
+
+                        const icon = b.querySelector('.material-symbols-outlined:not(.filled)');
+                        const span = b.querySelector('span:last-child');
+                        icon.classList.remove('text-primary');
+                        icon.classList.add('text-slate-700', 'dark:text-slate-300');
+                        span.classList.remove('text-primary', 'text-slate-900');
+                        span.classList.add('text-slate-600', 'dark:text-slate-300');
+                    });
+
+                    btn.classList.add('border-2', 'border-primary', 'bg-primary/10', 'dark:bg-primary/5', 'active-method');
+                    btn.classList.remove('border', 'border-slate-200', 'dark:border-slate-700', 'bg-white', 'dark:bg-slate-800');
+                    btn.querySelector('.check-icon').classList.remove('hidden');
+
+                    const activeIcon = btn.querySelector('.material-symbols-outlined:not(.filled)');
+                    const activeSpan = btn.querySelector('span:last-child');
+                    activeIcon.classList.add('text-primary');
+                    activeIcon.classList.remove('text-slate-700', 'dark:text-slate-300');
+                    activeSpan.classList.add('text-primary');
+                    activeSpan.classList.remove('text-slate-600', 'dark:text-slate-300');
+
+                    const methodId = btn.id.replace('method-', 'form-');
+                    paymentForms.forEach(form => {
+                        if (form.id === methodId) form.classList.remove('hidden');
+                        else form.classList.add('hidden');
+                    });
+                };
+            });
+        }
+
+        // Currency Selector Logic
+        const currencyBtn = document.getElementById('currency-btn');
+        const currencyDropdown = document.getElementById('currency-dropdown');
+        const currencyOpts = document.querySelectorAll('.currency-opt');
+        const activeCurrency = document.getElementById('active-currency');
+        let currencyOpen = false;
+
+        currencyBtn.onclick = (e) => {
+            e.stopPropagation();
+            currencyOpen = !currencyOpen;
+            if (currencyOpen) {
+                currencyDropdown.classList.remove('invisible', 'scale-95', 'opacity-0');
+                currencyDropdown.classList.add('visible', 'scale-100', 'opacity-100');
+            } else {
+                currencyDropdown.classList.remove('visible', 'scale-100', 'opacity-100');
+                currencyDropdown.classList.add('invisible', 'scale-95', 'opacity-0');
+            }
+        };
+
+        currencyOpts.forEach(opt => {
+            opt.onclick = () => {
+                const currency = opt.dataset.currency;
+                activeCurrency.textContent = currency;
+                currencyOpen = false;
+                currencyDropdown.classList.remove('visible', 'scale-100', 'opacity-100');
+                currencyDropdown.classList.add('invisible', 'scale-95', 'opacity-0');
+            };
+        });
+
+        // Search Swap Logic
+        const swapBtn = document.getElementById('swapBtn');
+        const fromInput = document.getElementById('fromInput');
+        const toInput = document.getElementById('toInput');
+
+        if (swapBtn && fromInput && toInput) {
+            swapBtn.onclick = () => {
+                const temp = fromInput.value;
+                fromInput.value = toInput.value;
+                toInput.value = temp;
+
+                // Optional: Add a subtle rotation animation to the icon
+                const icon = swapBtn.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    icon.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                    icon.style.transform = (icon.style.transform === 'rotate(180deg)') ? 'rotate(0deg)' : 'rotate(180deg)';
+                }
+            };
+        }
+
+        document.addEventListener('click', () => {
+            currencyOpen = false;
+            currencyDropdown.classList.remove('visible', 'scale-100', 'opacity-100');
+            currencyDropdown.classList.add('invisible', 'scale-95', 'opacity-0');
+        });
+
+        // Calendar Logic
+        let activeDateView = 'home';
+        function toggleCalendar(show, viewOrigin) {
+            const overlay = document.getElementById('calendar-overlay');
+            const content = document.getElementById('calendar-content');
+
+            if (viewOrigin) activeDateView = viewOrigin;
+
+            if (show) {
+                overlay.style.display = 'flex';
+                setTimeout(() => {
+                    overlay.classList.add('active');
+                    content.classList.remove('scale-90', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                overlay.classList.remove('active');
+                content.classList.add('scale-90', 'opacity-0');
+                content.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        function selectPickedDate(event, dateStr) {
+            console.log('Selected date:', dateStr);
+
+            // Update displays
+            const homeDisplay = document.getElementById('homeDateDisplay');
+            const searchDisplay = document.getElementById('searchDateDisplay');
+
+            if (homeDisplay) homeDisplay.value = dateStr;
+            if (searchDisplay) searchDisplay.textContent = dateStr;
+
+            // Update active states in calendar grid (visual feedback)
+            const days = document.querySelectorAll('.calendar-day-btn');
+            days.forEach(day => {
+                day.classList.remove('active');
+                day.innerHTML = day.textContent; // Reset internal icons
+            });
+
+            if (event && event.target) {
+                event.target.classList.add('active');
+
+                // Explicit "Check Twice" Animation Sequence
+                // Phase 1: Selection confirmed
+                event.target.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-bounce">check_circle</span>`;
+
+                setTimeout(() => {
+                    // Phase 2: Twice Checked / Verification
+                    if (event.target.classList.contains('active')) {
+                        event.target.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-pulse text-white">fact_check</span>`;
+                        event.target.classList.add('bg-emerald-500', 'shadow-emerald-500/40');
+                    }
+                }, 400);
+            }
+
+            // Feedback and closing
+            if (activeDateView === 'home') {
+                setTimeout(() => {
+                    toggleCalendar(false);
+                    showLoadingAndNavigate('search');
+                }, 1000); // Increased delay to show the day's "twice check" pulse
+            } else {
+                setTimeout(() => {
+                    toggleCalendar(false);
+                    const results = document.getElementById('resultCountLabel');
+                    if (results) {
+                        results.textContent = "Updating availability...";
+                        setTimeout(() => results.textContent = "34 Buses Found", 800);
+                    }
+                }, 300);
+            }
+        }
+
+        function applyCalendarSelection() {
+            // Apply current selected date
+            toggleCalendar(false);
+            if (activeDateView === 'home') {
+                showLoadingAndNavigate('search');
+            } else if (activeDateView === 'search') {
+                const results = document.getElementById('resultCountLabel');
+                if (results) {
+                    results.textContent = "Updating availability...";
+                    setTimeout(() => results.textContent = "34 Buses Found", 800);
+                }
+            }
+        }
+
+        let currentMonthIdx = 9; // October
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        function changeMonth(dir) {
+            currentMonthIdx += dir;
+            if (currentMonthIdx < 0) currentMonthIdx = 11;
+            if (currentMonthIdx > 11) currentMonthIdx = 0;
+
+            const currentTitle = document.querySelector('#calendar-content h3');
+            if (currentTitle) {
+                currentTitle.innerHTML = `${months[currentMonthIdx]} 2024 <span class="material-symbols-outlined text-primary" style="font-size: 20px;">calendar_month</span>`;
+            }
+
+            // Re-render days (mock re-render for visual feedback)
+            const grid = document.getElementById('calendar-days-grid');
+            if (grid) {
+                grid.style.opacity = '0';
+                setTimeout(() => {
+                    grid.style.opacity = '1';
+                }, 200);
+            }
+        }
+
+        // Helper for consistent navigation with loading check
+        function showLoadingAndNavigate(dest) {
+            const findBtn = document.querySelector('#view-home button.bg-primary');
+            if (findBtn && dest === 'search') {
+                const originalText = findBtn.innerHTML;
+
+                // Phase 1: Searching
+                findBtn.innerHTML = '<span class="material-symbols-outlined animate-spin mr-2">searching</span>Searching...';
+
+                setTimeout(() => {
+                    // Phase 2: Twice Checked logic (Verifying)
+                    findBtn.innerHTML = '<span class="material-symbols-outlined mr-2">fact_check</span>Almost there...';
+
+                    setTimeout(() => {
+                        navigateTo(dest);
+                        findBtn.innerHTML = originalText;
+                    }, 800);
+                }, 1000);
+            } else {
+                navigateTo(dest);
+            }
+        }
+
+        // Initialize Calendar Days
+        function initCalendarDays() {
+            const days = document.querySelectorAll('.calendar-day-btn:not(.disabled)');
+            days.forEach(day => {
+                day.addEventListener('click', (e) => {
+                    const dateVal = day.textContent;
+                    const dateStr = `Sat, Oct ${dateVal}`; // Simulation
+                    selectPickedDate(e, dateStr);
+                });
+            });
+        }
+
+        // Call initialization
+        initCalendarDays();
+
+        // Close calendar on overlay click
+        document.getElementById('calendar-overlay').onclick = (e) => {
+            if (e.target.id === 'calendar-overlay') toggleCalendar(false);
+        };
+
+        // Initialize Home
+        navigateTo('home');
+    </script>
+</body>```
