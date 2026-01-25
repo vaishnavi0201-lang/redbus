@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker - Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-dark": "#101a22",
+                        "card-dark": "#1a2631",
+                        "border-dark": "#283239",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-background-dark text-white font-display overflow-x-hidden antialiased">
+
+    <!-- Shared Header -->
+    <header id="main-header"
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background-dark shadow-lg">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-5">
+                <div class="flex items-center gap-3 text-white cursor-pointer" onclick="navigateTo('home')">
+                    <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 text-primary">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">directions_bus</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold tracking-tight">BusBooker</h2>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('home')">Home</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('search_results')">Routes</a>
+                    <a class="text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('dashboard')">My Trips</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Help</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a onclick="navigateTo('signin')"
+                        class="flex items-center justify-center rounded-lg h-10 px-6 bg-white/10 hover:bg-white/20 text-white text-sm font-bold backdrop-blur-sm transition-all border border-white/10 cursor-pointer">Sign
+                        In</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-container">
+        <!-- Dashboard View -->
+        <section id="view-dashboard" class="view">
+            <div class="flex flex-col flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-16 py-24">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-1">Welcome back, Alex</h1>
+                        <p class="text-slate-500 text-sm">Here's what's happening with your journey today.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div
+                        class="lg:col-span-8 bg-card-dark rounded-xl border border-border-dark overflow-hidden shadow-sm">
+                        <div class="p-5 border-b border-border-dark flex items-center justify-between">
+                            <h2 class="text-lg font-bold">Current Trip: CHN → BLR</h2>
+                            <span
+                                class="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full uppercase">En
+                                Route</span>
+                        </div>
+                        <div class="h-[280px] bg-[#0f161b] relative overflow-hidden">
+                            <div class="absolute inset-0 opacity-50 bg-cover bg-center"
+                                style="background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000')">
+                            </div>
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                <div
+                                    class="size-12 bg-primary rounded-full flex items-center justify-center animate-pulse">
+                                    <span class="material-symbols-outlined text-white">directions_bus</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex justify-between mb-2"><span class="text-sm font-medium">Trip
+                                    Progress</span><span class="font-bold">65%</span></div>
+                            <div class="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 flex flex-col gap-6">
+                        <div class="p-5 bg-card-dark rounded-xl border border-border-dark">
+                            <p class="text-slate-400 text-sm">Total Distance</p>
+                            <h3 class="text-3xl font-bold">3,450 km</h3>
+                        </div>
+                        <div class="p-5 bg-card-dark rounded-xl border border-border-dark">
+                            <p class="text-slate-400 text-sm">CO2 Saved</p>
+                            <h3 class="text-3xl font-bold">45 kg</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker - Success</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-dark": "#101a22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-background-dark text-white font-display overflow-x-hidden antialiased">
+
+    <div id="app-container">
+        <!-- Success View -->
+        <section id="view-success" class="view">
+            <div class="flex flex-col items-center justify-center min-h-screen py-24 px-4 bg-background-dark">
+                <div class="text-center mb-10">
+                    <div
+                        class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 text-green-500 mb-6">
+                        <span class="material-symbols-outlined !text-5xl">check_circle</span>
+                    </div>
+                    <h2 class="text-4xl font-extrabold mb-3">Booking Confirmed!</h2>
+                    <p class="text-slate-400">Your ticket is ready and has been sent to your email.</p>
+                </div>
+                <!-- Ticket -->
+                <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                    <div class="p-8 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
+                        <div class="flex justify-between mb-8">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase">Operator</p>
+                                <p class="font-bold">MegaBus Express</p>
+                            </div>
+                            <div class="bg-white/10 px-3 py-1 rounded-full text-xs">Business</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-8 mb-6">
+                            <div>
+                                <p class="text-3xl font-bold">CHN</p>
+                                <p class="text-slate-400 text-sm">Chennai</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold">BLR</p>
+                                <p class="text-slate-400 text-sm">Bangalore</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase">Seat</p>
+                                <p class="font-bold text-primary">4A</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-400 uppercase">Date</p>
+                                <p class="font-bold">Oct 24</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-slate-400 uppercase">Time</p>
+                                <p class="font-bold">08:00 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center justify-between -mt-4">
+                        <div class="w-8 h-8 rounded-full bg-background-dark -ml-4"></div>
+                        <div class="border-t-2 border-dashed border-slate-600 w-full mx-2 opacity-50"></div>
+                        <div class="w-8 h-8 rounded-full bg-background-dark -mr-4"></div>
+                    </div>
+                    <div class="p-8 flex flex-col items-center">
+                        <div class="bg-white p-3 rounded-xl mb-6"><span
+                                class="material-symbols-outlined !text-[120px] text-black">qr_code_2</span></div>
+                        <button onclick="navigateTo('home')"
+                            class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl transition-all">Back
+                            to Home</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>

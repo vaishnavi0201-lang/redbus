@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker - Search Results</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101a22",
+                        "card-dark": "#1a2631",
+                        "card-border": "#283239",
+                        "surface-dark": "#1b2227",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden antialiased">
+
+    <!-- Shared Header -->
+    <header id="main-header"
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background-dark shadow-lg">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-5">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 text-white cursor-pointer" onclick="navigateTo('home')">
+                    <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 text-primary">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">directions_bus</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold tracking-tight">BusBooker</h2>
+                </div>
+                <!-- Navigation -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('home')">Home</a>
+                    <a class="text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('search_results')">Routes</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('dashboard')">My Trips</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Help</a>
+                </div>
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    <div class="relative group" id="currency-selector">
+                        <button id="currency-btn"
+                            class="hidden sm:flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium h-10 px-3 rounded-lg hover:bg-white/5 transition-all">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">language</span>
+                            <span id="active-currency">INR</span>
+                            <span class="material-symbols-outlined text-xs transition-transform group-open:rotate-180"
+                                style="font-size: 16px;">expand_more</span>
+                        </button>
+                        <div id="currency-dropdown"
+                            class="absolute top-12 right-0 w-40 glass-panel rounded-xl py-2 shadow-2xl scale-95 opacity-0 invisible transition-all duration-200 origin-top-right z-[60]">
+                            <div class="px-3 py-2 text-[10px] font-bold text-white/40 uppercase tracking-wider">Select
+                                Currency</div>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="INR">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">payments</span><span>INR - Rupee</span>
+                            </button>
+                            <button
+                                class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                data-currency="USD">
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">attach_money</span><span>USD - Dollar</span>
+                            </button>
+                        </div>
+                    </div>
+                    <a onclick="navigateTo('signin')"
+                        class="flex items-center justify-center rounded-lg h-10 px-6 bg-white/10 hover:bg-white/20 text-white text-sm font-bold backdrop-blur-sm transition-all border border-white/10 cursor-pointer">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-container">
+        <!-- Search Results View -->
+        <section id="view-search" class="view">
+            <div class="flex flex-1 w-full max-w-[1440px] mx-auto pt-20">
+                <aside
+                    class="w-80 hidden lg:flex flex-col gap-6 p-6 border-r border-slate-200 dark:border-[#283239] h-[calc(100vh-80px)] sticky top-[80px] overflow-y-auto hide-scrollbar">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold">Filters</h3>
+                        <button id="resetFilters"
+                            class="text-sm text-primary font-medium hover:underline">Reset</button>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            Departure Time</p>
+                        <div class="grid grid-cols-2 gap-2" id="timeFilters">
+                            <button data-time="morning"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">wb_twilight</span><span
+                                    class="text-xs font-medium">Morning</span>
+                            </button>
+                            <button data-time="afternoon"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-primary bg-primary/10 dark:bg-primary/20 transition-all active-filter">
+                                <span class="material-symbols-outlined text-primary mb-1">wb_sunny</span><span
+                                    class="text-xs font-bold text-primary">Afternoon</span>
+                            </button>
+                            <button data-time="evening"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">nights_stay</span><span
+                                    class="text-xs font-medium">Evening</span>
+                            </button>
+                            <button data-time="night"
+                                class="time-filter flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                                <span
+                                    class="material-symbols-outlined text-slate-400 group-hover:text-primary mb-1">bedtime</span><span
+                                    class="text-xs font-medium">Night</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Price
+                            Range</p>
+                        <div class="px-2">
+                            <input id="priceRange" type="range" min="25" max="85" value="85"
+                                class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" />
+                            <div class="flex justify-between text-sm font-medium mt-1"><span>₹25</span><span
+                                    id="priceLabel">Max: ₹85</span></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Class
+                            & Amenities</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Express Route</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input id="filterExpress" checked class="amenity-filter sr-only peer" type="checkbox"
+                                    value="express" />
+                                <div
+                                    class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Luxury Class</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input id="filterLuxury" class="amenity-filter sr-only peer" type="checkbox"
+                                    value="luxury" />
+                                <div
+                                    class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+                <main class="flex-1 p-4 md:p-8 flex flex-col gap-6">
+                    <div
+                        class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+                        <div>
+                            <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                                Chennai → Bangalore</h1>
+                            <p id="resultCountLabel" class="text-slate-500 dark:text-slate-400 mt-1.5 font-medium">34
+                                Buses Found</p>
+                        </div>
+                        <div
+                            class="flex items-center bg-slate-100 dark:bg-card-dark rounded-2xl p-1.5 border border-slate-200 dark:border-border-dark shadow-inner">
+                            <button
+                                class="px-4 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5"><span
+                                    class="text-xs uppercase font-black text-slate-500 block mb-0.5">Origin</span><span
+                                    class="text-sm font-bold text-white">Chennai</span></button>
+                            <button
+                                class="px-4 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5"><span
+                                    class="text-xs uppercase font-black text-slate-500 block mb-0.5">Dest</span><span
+                                    class="text-sm font-bold text-white">Bangalore</span></button>
+                            <button class="px-5 py-2 hover:bg-white/5 rounded-xl transition-all group"
+                                onclick="toggleCalendar(true, 'search')"><span
+                                    class="text-xs uppercase font-black text-primary block mb-0.5 group-hover:scale-105 transition-transform">Departure</span><span
+                                    id="searchDateDisplay" class="text-sm font-bold text-white">Sat, Oct
+                                    24</span></button>
+                        </div>
+                    </div>
+                    <div id="busList" class="flex flex-col gap-6">
+                        <div data-time="morning" data-price="42" data-express="true" data-luxury="true"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3"><span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">Business
+                                        Class</span><span class="font-bold text-lg">BoltBus Express</span></div><span
+                                    class="text-2xl font-bold text-primary">₹42.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left"><span class="block text-xl font-bold">08:30
+                                        AM</span><span class="text-sm text-slate-500">Chennai</span></div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">4h 15m</div>
+                                <div class="text-center md:text-right"><span class="block text-xl font-bold">12:45
+                                        PM</span><span class="text-sm text-slate-500">Bangalore</span></div>
+                            </div>
+                            <button onclick="navigateTo('seat_selection')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                        <div data-time="afternoon" data-price="55" data-express="false" data-luxury="true"
+                            class="bus-card bg-white dark:bg-[#1e293b] rounded-xl p-6 border border-slate-200 dark:border-[#283239] hover:border-primary/50 transition-all">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-3"><span
+                                        class="px-3 py-1 rounded-full text-xs font-bold bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300">Quiet
+                                        Zone</span><span class="font-bold text-lg">NeoBus Lines</span></div><span
+                                    class="text-2xl font-bold text-primary">₹55.00</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center md:text-left"><span class="block text-xl font-bold">02:15
+                                        PM</span><span class="text-sm text-slate-500">Chennai</span></div>
+                                <div class="flex-1 px-8 text-center text-xs text-slate-400">3h 50m</div>
+                                <div class="text-center md:text-right"><span class="block text-xl font-bold">06:05
+                                        PM</span><span class="text-sm text-slate-500">Bangalore</span></div>
+                            </div>
+                            <button onclick="navigateTo('seat_selection')"
+                                class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">Select
+                                Seat</button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+    </div>
+
+    <!-- Global Calendar Modal -->
+    <div id="calendar-overlay"
+        class="fixed inset-0 z-[100] items-center justify-center bg-black/70 backdrop-blur-md px-4">
+        <div class="calendar-modal w-full max-w-[400px] rounded-[2rem] overflow-hidden scale-90 opacity-0"
+            id="calendar-content">
+            <div class="p-8 pb-4 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1.5">Select Date</p>
+                    <h3 class="text-2xl font-black text-white flex items-center gap-2">October 2024 <span
+                            class="material-symbols-outlined text-primary"
+                            style="font-size: 20px;">calendar_month</span></h3>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        class="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-all border border-white/5"
+                        onclick="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+                    <button
+                        class="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-all border border-white/5"
+                        onclick="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+            </div>
+            <div class="p-8 pt-4">
+                <div class="grid grid-cols-7 gap-1 mb-4 opacity-30">
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Mo</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Tu</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">We</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Th</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Fr</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Sa</div>
+                    <div class="text-center text-[10px] font-black uppercase tracking-widest">Su</div>
+                </div>
+                <div class="grid grid-cols-7 gap-2" id="calendar-days-grid">
+                    <div class="calendar-day-btn disabled text-white/20">30</div>
+                    <div class="calendar-day-btn text-white/60">1</div>
+                    <div class="calendar-day-btn text-white/60">2</div>
+                    <div class="calendar-day-btn text-white/60">3</div>
+                    <div class="calendar-day-btn active">4</div>
+                    <div class="calendar-day-btn text-white/60">5</div>
+                    <div class="calendar-day-btn text-white/60">6</div>
+                    <div class="col-span-7 py-2 flex items-center justify-center gap-2 opacity-20">
+                        <div class="h-px bg-white/20 flex-1"></div><span class="text-[10px] font-bold">...</span>
+                        <div class="h-px bg-white/20 flex-1"></div>
+                    </div>
+                    <div class="calendar-day-btn text-white/60">21</div>
+                    <div class="calendar-day-btn text-white/60">22</div>
+                    <div class="calendar-day-btn text-white/60">23</div>
+                    <div class="calendar-day-btn text-white/60 hover:active">24</div>
+                    <div class="calendar-day-btn text-white/60">25</div>
+                    <div class="calendar-day-btn text-white/60">26</div>
+                    <div class="calendar-day-btn text-white/60">27</div>
+                </div>
+            </div>
+            <div class="p-8 bg-white/5 flex gap-4">
+                <button
+                    class="flex-1 h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold transition-all border border-white/10"
+                    onclick="toggleCalendar(false)">Cancel</button>
+                <button
+                    class="flex-1 h-14 rounded-2xl bg-primary hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-xl shadow-primary/20"
+                    onclick="applyCalendarSelection()">Apply Selection</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-background-dark pt-16 pb-8 border-t border-white/5">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-slate-500 text-sm">© 2024 BusBooker Inc. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>

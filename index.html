@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker - All-in-One SPA</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101a22",
+                        "card-dark": "#1a2631",
+                        "border-dark": "#283239",
+                        "seat-available": "#4a5568",
+                        "seat-ladies": "#a78bfa",
+                        "seat-booked": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "linear-gradient(rgba(16, 26, 34, 0.4) 0%, rgba(16, 26, 34, 0.8) 100%)",
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Shared & View Transitions */
+        .view {
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .view.hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background-color: #000000 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: #000000;
+            border-color: #259df4;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(37, 157, 244, 0.3);
+        }
+
+        /* 3D Bus Styles */
+        .perspective-container {
+            perspective: 1000px;
+        }
+
+        .bus-floor {
+            transform: rotateX(25deg) scale(0.95);
+            transform-style: preserve-3d;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .seat-3d {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .seat-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .seat-3d.selected {
+            box-shadow: 0 0 15px rgba(37, 157, 244, 0.6), 0 6px 0 rgba(16, 85, 138, 1);
+        }
+
+        /* Scrollbars */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Calendar */
+        #calendar-overlay {
+            display: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        #calendar-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .calendar-modal {
+            background: rgba(26, 38, 49, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .calendar-day-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .calendar-day-btn:hover:not(.disabled) {
+            background: rgba(37, 157, 244, 0.15);
+            color: #259df4;
+        }
+
+        .calendar-day-btn.active {
+            background: #259df4;
+            color: white;
+            box-shadow: 0 6px 15px rgba(37, 157, 244, 0.4);
+            font-weight: 700;
+        }
+
+        .calendar-day-btn.disabled {
+            opacity: 0.1;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden antialiased">
+    <div class="relative flex min-h-screen w-full flex-col">
+
+        <!-- Global Header -->
+        <header id="main-header"
+            class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background-dark/90 shadow-lg backdrop-blur-md">
+            <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between py-5">
+                    <div class="flex items-center gap-3 text-white cursor-pointer" onclick="navigateTo('home')">
+                        <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 text-primary">
+                            <span class="material-symbols-outlined" style="font-size: 24px;">directions_bus</span>
+                        </div>
+                        <h2 class="text-white text-xl font-bold tracking-tight">BusBooker</h2>
+                    </div>
+                    <div class="hidden md:flex items-center gap-8">
+                        <a class="nav-link text-white text-sm font-medium transition-colors cursor-pointer"
+                            onclick="navigateTo('home')" data-view="home">Home</a>
+                        <a class="nav-link text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                            onclick="navigateTo('search')" data-view="search">Routes</a>
+                        <a class="nav-link text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                            onclick="navigateTo('dashboard')" data-view="dashboard">My Trips</a>
+                        <a class="nav-link text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                            onclick="navigateTo('help')" data-view="help">Help</a>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="relative group" id="currency-selector">
+                            <button id="currency-btn"
+                                class="hidden sm:flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium h-10 px-3 rounded-lg hover:bg-white/5 transition-all">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">language</span>
+                                <span id="active-currency">INR</span>
+                                <span class="material-symbols-outlined text-xs">expand_more</span>
+                            </button>
+                            <div id="currency-dropdown"
+                                class="absolute top-12 right-0 w-40 glass-panel rounded-xl py-2 shadow-2xl scale-95 opacity-0 invisible transition-all duration-200 origin-top-right z-[60]">
+                                <div class="px-3 py-2 text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                                    Currency</div>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="INR"></button>
+                                <span class="material-symbols-outlined text-primary"
+                                    style="font-size: 18px;">payments</span><span>INR - Rupee</span>
+                                </button>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="USD">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 18px;">attach_money</span><span>USD - Dollar</span>
+                                </button>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="EUR">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 18px;">euro</span><span>EUR - Euro</span>
+                                </button>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="GBP">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 18px;">currency_pound</span><span>GBP - Pound</span>
+                                </button>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="AUD">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 18px;">currency_exchange</span><span>AUD - Dollar</span>
+                                </button>
+                                <button
+                                    class="currency-opt w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                    data-currency="SGD">
+                                    <span class="material-symbols-outlined text-primary"
+                                        style="font-size: 18px;">currency_exchange</span><span>SGD - Dollar</span>
+                                </button>
+                            </div>
+                        </div>
+                        <a onclick="navigateTo('signin')"
+                            class="flex items-center justify-center rounded-lg h-10 px-6 bg-white/10 hover:bg-white/20 text-white text-sm font-bold backdrop-blur-sm transition-all border border-white/10 cursor-pointer">Sign
+                            In</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="app-container" class="flex-1">
+
+            <!-- VIEW: HOME -->
+            <section id="view-home" class="view">
+                <main class="relative flex flex-col justify-center items-center min-h-screen pt-20">
+                    <div class="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-hero-pattern"
+                        style='background-image: linear-gradient(rgba(16, 26, 34, 0.3) 0%, rgba(16, 26, 34, 0.9) 100%), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000");'>
+                    </div>
+                    <div class="relative z-10 w-full max-w-7xl px-4 flex flex-col items-center">
+                        <div class="text-center max-w-3xl mb-12">
+                            <h1 class="text-white text-5xl sm:text-7xl font-black mb-4 tracking-tight">Journey
+                                Comfortably</h1>
+                            <p class="text-blue-100/80 text-xl font-medium max-w-xl mx-auto">Experience scenic rides
+                                with premium comfort. Book your seat today.</p>
+                        </div>
+                        <div class="w-full max-w-5xl glass-panel rounded-2xl p-4 shadow-2xl">
+                            <div class="flex flex-col lg:flex-row gap-2 items-center">
+                                <div class="relative w-full flex-1 group">
+                                    <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10"><span
+                                            class="material-symbols-outlined">trip_origin</span></div>
+                                    <div class="absolute left-12 top-2 text-xs text-white/60 font-medium z-10">From
+                                    </div>
+                                    <input id="fromInput"
+                                        class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white text-lg font-medium"
+                                        placeholder="Origin City" value="Chennai, TN" />
+                                </div>
+                                <button id="swapBtn"
+                                    class="hidden lg:flex size-10 items-center justify-center rounded-full bg-white/20 text-primary hover:bg-primary hover:text-white transition-all -ml-6 -mr-6 z-20 border border-white/20">
+                                    <span class="material-symbols-outlined">sync_alt</span>
+                                </button>
+                                <div class="relative w-full flex-1 group">
+                                    <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10"><span
+                                            class="material-symbols-outlined">location_on</span></div>
+                                    <div class="absolute left-12 top-2 text-xs text-white/60 font-medium z-10">To</div>
+                                    <input id="toInput"
+                                        class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white text-lg font-medium"
+                                        placeholder="Destination City" value="Bangalore, KA" />
+                                </div>
+                                <div onclick="toggleCalendar(true, 'home')"
+                                    class="relative w-full lg:w-[220px] cursor-pointer group/date">
+                                    <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary"><span
+                                            class="material-symbols-outlined">calendar_month</span></div>
+                                    <div class="absolute left-12 top-2 text-xs text-white/60 font-medium">Departure
+                                    </div>
+                                    <input id="homeDateDisplay"
+                                        class="glass-input bg-black w-full h-[72px] rounded-xl pl-12 pt-5 pb-1 text-white text-lg font-medium cursor-pointer"
+                                        value="Sat, Oct 24" readonly />
+                                </div>
+                                <button onclick="showLoadingAndNavigate('search')"
+                                    class="w-full lg:w-auto h-[72px] px-8 rounded-xl bg-primary hover:bg-blue-500 text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                                    <span class="material-symbols-outlined">search</span><span>Find Tickets</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </section>
+
+            <!-- VIEW: SEARCH RESULTS -->
+            <section id="view-search" class="view hidden">
+                <div class="flex flex-1 w-full max-w-[1440px] mx-auto pt-20">
+                    <aside
+                        class="w-84 hidden lg:flex flex-col gap-6 p-6 border-r border-[#283239] h-[calc(100vh-80px)] sticky top-[80px] overflow-y-auto hide-scrollbar">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-black">Search Route</h2>
+                            <button onclick="resetFilters()"
+                                class="text-xs text-primary font-bold uppercase hover:underline tracking-widest">Reset</button>
+                        </div>
+
+                        <!-- Sidebar Search Widget -->
+                        <div class="space-y-4 pb-6 border-b border-white/5">
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">From</label>
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary"
+                                        style="font-size: 18px;">trip_origin</span>
+                                    <input id="sidebarFrom"
+                                        class="glass-input w-full h-12 rounded-xl pl-10 pr-4 text-sm font-medium text-white"
+                                        value="Chennai, TN" />
+                                </div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">To</label>
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary"
+                                        style="font-size: 18px;">location_on</span>
+                                    <input id="sidebarTo"
+                                        class="glass-input w-full h-12 rounded-xl pl-10 pr-4 text-sm font-medium text-white"
+                                        value="Bangalore, KA" />
+                                </div>
+                            </div>
+                            <button onclick="runSidebarSearch()"
+                                class="w-full h-12 bg-primary hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                                id="sidebarSearchBtn">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">search</span>
+                                <span>Verify Route</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-3">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Departure Time
+                            </p>
+                            <div class="grid grid-cols-2 gap-2" id="timeFilters">
+                                <button data-time="morning" onclick="toggleTimeFilter(this)"
+                                    class="time-filter p-3 rounded-xl border border-[#283239] hover:bg-white/5 transition-all text-sm font-medium flex flex-col items-center gap-1 group">
+                                    <span
+                                        class="material-symbols-outlined text-slate-500 group-hover:text-primary">wb_twilight</span>
+                                    <span class="text-[10px] uppercase font-bold">Morning</span>
+                                </button>
+                                <button data-time="afternoon" onclick="toggleTimeFilter(this)"
+                                    class="time-filter p-3 rounded-xl border-2 border-primary bg-primary/10 text-primary transition-all text-sm font-bold flex flex-col items-center gap-1">
+                                    <span class="material-symbols-outlined">wb_sunny</span>
+                                    <span class="text-[10px] uppercase">Afternoon</span>
+                                </button>
+                                <button data-time="evening" onclick="toggleTimeFilter(this)"
+                                    class="time-filter p-3 rounded-xl border border-[#283239] hover:bg-white/5 transition-all text-sm font-medium flex flex-col items-center gap-1 group">
+                                    <span
+                                        class="material-symbols-outlined text-slate-500 group-hover:text-primary">nights_stay</span>
+                                    <span class="text-[10px] uppercase font-bold">Evening</span>
+                                </button>
+                                <button data-time="night" onclick="toggleTimeFilter(this)"
+                                    class="time-filter p-3 rounded-xl border border-[#283239] hover:bg-white/5 transition-all text-sm font-medium flex flex-col items-center gap-1 group">
+                                    <span
+                                        class="material-symbols-outlined text-slate-500 group-hover:text-primary">bedtime</span>
+                                    <span class="text-[10px] uppercase font-bold">Night</span>
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+                    <main class="flex-1 p-8 flex flex-col gap-6">
+                        <div
+                            class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+                            <div>
+                                <h1 class="text-3xl font-black">Chennai → Bangalore</h1>
+                                <p id="resultCountLabel" class="text-slate-500 mt-1">34 Buses Found</p>
+                            </div>
+                            <div
+                                class="flex items-center bg-card-dark rounded-2xl p-1.5 border border-border-dark shadow-2xl">
+                                <button onclick="openSearchModal('from')"
+                                    class="px-5 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5 group text-left">
+                                    <span
+                                        class="text-[10px] uppercase font-black text-slate-500 block mb-0.5 group-hover:text-primary">Origin</span>
+                                    <span id="headerFrom" class="text-sm font-bold text-white">Chennai</span>
+                                </button>
+                                <button onclick="openSearchModal('to')"
+                                    class="px-5 py-2 hover:bg-white/5 rounded-xl transition-all border-r border-white/5 group text-left">
+                                    <span
+                                        class="text-[10px] uppercase font-black text-slate-500 block mb-0.5 group-hover:text-primary">Dest</span>
+                                    <span id="headerTo" class="text-sm font-bold text-white">Bangalore</span>
+                                </button>
+                                <button onclick="toggleCalendar(true, 'search')"
+                                    class="px-6 py-2 hover:bg-white/5 rounded-xl transition-all group text-left">
+                                    <span
+                                        class="text-[10px] uppercase font-black text-primary block mb-0.5 group-hover:scale-105 transition-transform">Departure</span>
+                                    <span id="searchDateDisplay" class="text-sm font-bold text-white">Sat, Oct 24</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="busList" class="flex flex-col gap-6">
+                            <!-- Morning Bus -->
+                            <div data-time="morning"
+                                class="bus-card bg-[#1e293b] rounded-xl p-6 border border-[#283239] hover:border-primary/50 transition-all hidden">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-900/30 text-purple-300">Business</span>
+                                        <span class="font-bold text-lg">BoltBus Express</span>
+                                    </div>
+                                    <span class="text-2xl font-black text-primary">₹42.00</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-8">
+                                    <div class="text-left group/loc">
+                                        <span class="block text-xl font-black tracking-tight">08:30 AM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Chennai</span>
+                                    </div>
+                                    <div class="flex-1 px-8 relative flex flex-col items-center">
+                                        <div class="w-full h-px bg-slate-800 relative">
+                                            <div
+                                                class="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-slate-700">
+                                            </div>
+                                            <div
+                                                class="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary pulse-ring">
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest">4h
+                                            15m</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="block text-xl font-black tracking-tight">12:45 PM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Bangalore</span>
+                                    </div>
+                                </div>
+                                <button onclick="navigateTo('seat')"
+                                    class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 group/btn">
+                                    <span>Select Seat</span>
+                                    <span
+                                        class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+
+                            <!-- Afternoon Bus (Default) -->
+                            <div data-time="afternoon"
+                                class="bus-card bg-[#1e293b] rounded-xl p-6 border border-primary/30 shadow-lg shadow-primary/5 transition-all">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-900/30 text-teal-300">Luxury</span>
+                                        <span class="font-bold text-lg">NeoBus Lines</span>
+                                    </div>
+                                    <span class="text-2xl font-black text-primary">₹55.00</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-8">
+                                    <div class="text-left">
+                                        <span class="block text-xl font-black tracking-tight">02:15 PM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Chennai</span>
+                                    </div>
+                                    <div class="flex-1 px-8 relative flex flex-col items-center">
+                                        <div class="w-full h-px bg-slate-800 relative">
+                                            <div
+                                                class="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-slate-700">
+                                            </div>
+                                            <div
+                                                class="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary pulse-ring">
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest">3h
+                                            50m</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="block text-xl font-black tracking-tight">06:05 PM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Bangalore</span>
+                                    </div>
+                                </div>
+                                <button onclick="navigateTo('seat')"
+                                    class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 group/btn">
+                                    <span>Select Seat</span>
+                                    <span
+                                        class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+
+                            <!-- Evening Bus -->
+                            <div data-time="evening"
+                                class="bus-card bg-[#1e293b] rounded-xl p-6 border border-[#283239] hover:border-primary/50 transition-all hidden">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-900/30 text-indigo-300">Sleeper</span>
+                                        <span class="font-bold text-lg">StarLine Nightly</span>
+                                    </div>
+                                    <span class="text-2xl font-black text-primary">₹65.00</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-8">
+                                    <div class="text-left">
+                                        <span class="block text-xl font-black tracking-tight">07:30 PM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Chennai</span>
+                                    </div>
+                                    <div class="flex-1 px-8 relative flex flex-col items-center">
+                                        <div class="w-full h-px bg-slate-800 relative">
+                                            <div
+                                                class="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-slate-700">
+                                            </div>
+                                            <div
+                                                class="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary pulse-ring">
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest">5h
+                                            30m</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="block text-xl font-black tracking-tight">01:00 AM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Bangalore</span>
+                                    </div>
+                                </div>
+                                <button onclick="navigateTo('seat')"
+                                    class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 group/btn">
+                                    <span>Select Seat</span>
+                                    <span
+                                        class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+
+                            <!-- Night Bus -->
+                            <div data-time="night"
+                                class="bus-card bg-[#1e293b] rounded-xl p-6 border border-[#283239] hover:border-primary/50 transition-all hidden">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-900/30 text-blue-300">Super
+                                            Deluxe</span>
+                                        <span class="font-bold text-lg">Midnight Express</span>
+                                    </div>
+                                    <span class="text-2xl font-black text-primary">₹48.00</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-8">
+                                    <div class="text-left">
+                                        <span class="block text-xl font-black tracking-tight">11:45 PM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Chennai</span>
+                                    </div>
+                                    <div class="flex-1 px-8 relative flex flex-col items-center">
+                                        <div class="w-full h-px bg-slate-800 relative">
+                                            <div
+                                                class="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-slate-700">
+                                            </div>
+                                            <div
+                                                class="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary pulse-ring">
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 mt-2 uppercase tracking-widest">4h
+                                            45m</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="block text-xl font-black tracking-tight">04:30 AM</span>
+                                        <span
+                                            class="text-xs font-medium text-slate-500 uppercase tracking-widest">Bangalore</span>
+                                    </div>
+                                </div>
+                                <button onclick="navigateTo('seat')"
+                                    class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 group/btn">
+                                    <span>Select Seat</span>
+                                    <span
+                                        class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </section>
+
+            <!-- VIEW: SEAT SELECTION -->
+            <section id="view-seat" class="view hidden">
+                <div class="flex flex-1 w-full max-w-[1440px] mx-auto pt-20 h-[calc(100vh-80px)] overflow-hidden">
+                    <div
+                        class="flex-1 relative bg-[#111518] perspective-container flex flex-col items-center justify-start overflow-y-auto hide-scrollbar py-10">
+                        <div
+                            class="bus-floor relative bg-[#1b2227] rounded-t-[3rem] p-8 w-[340px] min-h-[700px] border-x-4 border-t-4 border-slate-700">
+                            <div id="seatGrid" class="grid grid-cols-5 gap-y-6 gap-x-2">
+                                <div class="col-span-2 text-center text-xs text-slate-500 font-medium">Window</div>
+                                <div class="col-span-1"></div>
+                                <div class="col-span-2 text-center text-xs text-slate-500 font-medium">Window</div>
+                                <!-- Seat Buttons Layer -->
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-booked opacity-50 cursor-not-allowed flex items-center justify-center"><span
+                                        class="material-symbols-outlined text-white/30 text-lg">close</span></button>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-booked opacity-50 cursor-not-allowed flex items-center justify-center"><span
+                                        class="material-symbols-outlined text-white/30 text-lg">close</span></button>
+                                <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">1
+                                </div>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">1C</button>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold text-white/80">1D</button>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-ladies flex items-center justify-center text-xs font-bold">2A</button>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-ladies flex items-center justify-center text-xs font-bold">2B</button>
+                                <div class="w-4 flex items-center justify-center text-slate-700 text-xs font-mono">2
+                                </div>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold">2C</button>
+                                <button
+                                    class="seat-3d w-12 h-12 rounded-lg bg-seat-available hover:bg-slate-500 flex items-center justify-center text-xs font-bold">2D</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-[380px] bg-[#111518] border-l border-white/5 p-6 flex flex-col">
+                        <h2 class="text-lg font-bold mb-2">Your Selection</h2>
+                        <p id="seatSelectionCount" class="text-slate-400 text-sm mb-6">0 seats selected</p>
+                        <div class="bg-card-dark rounded-xl p-4 border border-white/5 flex-1">
+                            <h3 class="font-bold text-white mb-1">MegaBus Express</h3>
+                            <p class="text-xs text-slate-500 mb-4">Chennai → Bangalore</p>
+                            <div class="flex justify-between items-center bg-[#111518] p-3 rounded-lg">
+                                <span class="text-sm">Total Amount</span>
+                                <span class="text-xl font-bold text-primary">₹45.00</span>
+                            </div>
+                        </div>
+                        <button onclick="navigateTo('passenger')"
+                            class="w-full h-12 mt-6 bg-primary hover:bg-blue-600 rounded-xl font-bold flex items-center justify-center gap-2">
+                            Confirm Seats <span class="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: PASSENGER DETAILS -->
+            <section id="view-passenger" class="view hidden">
+                <div class="flex flex-col items-center justify-center min-h-screen py-24 px-4">
+                    <div class="w-full max-w-2xl bg-card-dark rounded-3xl p-8 border border-white/10">
+                        <h1 class="text-3xl font-black mb-8">Passenger Details</h1>
+                        <form class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Full Name</label>
+                                <input
+                                    class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white"
+                                    placeholder="Alex Doe" value="Alex Doe" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium">Age</label>
+                                    <input
+                                        class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white"
+                                        type="number" value="28" />
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium">Gender</label>
+                                    <select
+                                        class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white outline-none">
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" onclick="navigateTo('payment')"
+                                class="w-full h-14 bg-primary hover:bg-blue-600 rounded-2xl font-bold text-lg mt-8">Proceed
+                                to Payment</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: PAYMENT -->
+            <section id="view-payment" class="view hidden">
+                <div class="flex flex-col items-center justify-center min-h-screen py-24 px-4 text-center">
+                    <div class="w-full max-w-lg bg-card-dark rounded-3xl p-8 border border-white/10">
+                        <h1 class="text-3xl font-black mb-4">Secure Checkout</h1>
+                        <div class="flex gap-4 mb-8">
+                            <button
+                                class="flex-1 p-4 rounded-xl border-2 border-primary bg-primary/10 text-primary font-bold">Card</button>
+                            <button
+                                class="flex-1 p-4 rounded-xl border border-white/10 hover:bg-white/5 transition-all">UPI</button>
+                        </div>
+                        <div class="space-y-4 mb-8">
+                            <input class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white"
+                                placeholder="Card Number" />
+                            <div class="grid grid-cols-2 gap-4">
+                                <input
+                                    class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white"
+                                    placeholder="MM/YY" />
+                                <input
+                                    class="w-full h-14 rounded-xl px-4 bg-[#111518] border border-white/10 text-white"
+                                    placeholder="CVV" />
+                            </div>
+                        </div>
+                        <button onclick="navigateTo('success')"
+                            class="w-full h-14 bg-primary hover:bg-green-500 rounded-2xl font-bold text-lg shadow-xl transition-all">Pay
+                            ₹51.50</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: SUCCESS -->
+            <section id="view-success" class="view hidden">
+                <div class="flex flex-col items-center justify-center min-h-screen py-24 px-4 bg-background-dark">
+                    <div class="text-center mb-10">
+                        <div
+                            class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 text-green-500 mb-6">
+                            <span class="material-symbols-outlined !text-5xl">check_circle</span>
+                        </div>
+                        <h2 class="text-4xl font-extrabold mb-3">Booking Confirmed!</h2>
+                        <p class="text-slate-400">Your ticket has been sent to your email.</p>
+                    </div>
+                    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                        <div class="p-8 bg-slate-900 text-white text-center">
+                            <div class="bg-white p-4 rounded-2xl mb-6 inline-block"><span
+                                    class="material-symbols-outlined !text-9xl text-black">qr_code_2</span></div>
+                            <p class="text-sm font-bold text-primary mb-6">TICKET ID: BKB456729</p>
+                            <button onclick="navigateTo('home')"
+                                class="w-full h-14 bg-primary hover:bg-blue-600 rounded-xl font-bold">Back to
+                                Home</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: DASHBOARD -->
+            <section id="view-dashboard" class="view hidden">
+                <main class="max-w-7xl mx-auto px-4 py-32">
+                    <h1 class="text-4xl font-bold mb-2">Welcome Back, Alex</h1>
+                    <p class="text-slate-500 mb-12">Manage your current and upcoming trips.</p>
+                    <div class="grid lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 bg-card-dark rounded-3xl p-8 border border-white/10">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold">Current Trip</h2>
+                                <span
+                                    class="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">En
+                                    Route</span>
+                            </div>
+                            <div class="relative h-64 rounded-2xl overflow-hidden mb-8">
+                                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000"
+                                    class="w-full h-full object-cover opacity-50" />
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <div class="text-center">
+                                        <p class="text-3xl font-black">CHN → BLR</p>
+                                        <p class="text-slate-400">65% Progress</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="bg-card-dark rounded-3xl p-6 border border-white/10 text-center">
+                                <p class="text-slate-400 text-xs uppercase mb-2">Total KM Saved</p>
+                                <p class="text-4xl font-black">3,450 km</p>
+                            </div>
+                            <div class="bg-card-dark rounded-3xl p-6 border border-white/10 text-center">
+                                <p class="text-slate-400 text-xs uppercase mb-2">CO2 Offset</p>
+                                <p class="text-4xl font-black">45 kg</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </section>
+
+            <!-- VIEW: HELP -->
+            <section id="view-help" class="view hidden">
+                <main class="max-w-4xl mx-auto px-4 py-32 text-center">
+                    <h1 class="text-5xl font-black mb-6">How can we help?</h1>
+                    <p class="text-xl text-slate-500 mb-16">Support is available 24/7 for all your travel needs.</p>
+                    <div class="grid md:grid-cols-2 gap-8 mb-20">
+                        <div
+                            class="bg-card-dark p-8 rounded-3xl border border-white/10 text-left hover:border-primary/50 transition-all cursor-pointer">
+                            <span
+                                class="material-symbols-outlined text-primary text-5xl mb-6">confirmation_number</span>
+                            <h3 class="text-2xl font-bold mb-4">Refund Policy</h3>
+                            <p class="text-slate-400">Cancel up to 2 hours before departure for a full refund on all
+                                premium routes.</p>
+                        </div>
+                        <div
+                            class="bg-card-dark p-8 rounded-3xl border border-white/10 text-left hover:border-primary/50 transition-all cursor-pointer">
+                            <span class="material-symbols-outlined text-primary text-5xl mb-6">support_agent</span>
+                            <h3 class="text-2xl font-bold mb-4">Live Support</h3>
+                            <p class="text-slate-400">Our agents are online to help you with booking changes and
+                                boarding info.</p>
+                        </div>
+                    </div>
+                </main>
+            </section>
+
+            <!-- VIEW: SIGN IN -->
+            <section id="view-signin" class="view hidden">
+                <main class="min-h-screen flex items-center justify-center p-4">
+                    <div class="w-full max-w-sm glass-panel p-10 rounded-[2.5rem] text-center">
+                        <h1 class="text-3xl font-black mb-2">Welcome Back</h1>
+                        <p class="text-white/50 mb-10">Log in to manage your bookings.</p>
+                        <form class="space-y-4">
+                            <input class="glass-input w-full h-14 rounded-2xl px-6 text-white"
+                                placeholder="Email Address" type="email" />
+                            <input class="glass-input w-full h-14 rounded-2xl px-6 text-white" placeholder="Password"
+                                type="password" />
+                            <button type="button" onclick="navigateTo('dashboard')"
+                                class="w-full h-14 bg-primary hover:bg-blue-600 rounded-2xl font-bold shadow-xl shadow-primary/20 transition-all mt-6">Sign
+                                In</button>
+                        </form>
+                    </div>
+                </main>
+            </section>
+
+        </div>
+
+        <!-- Global Footer -->
+        <footer class="bg-background-dark py-12 border-t border-white/5 mt-auto">
+            <div
+                class="layout-container mx-auto max-w-7xl px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-8 rounded-lg bg-primary/20 text-primary">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">directions_bus</span>
+                    </div>
+                    <h2 class="text-white text-lg font-bold">BusBooker</h2>
+                </div>
+                <p class="text-slate-600 text-sm">© 2024 BusBooker Inc. All rights reserved.</p>
+                <div class="flex gap-8 text-slate-500 text-sm">
+                    <a class="hover:text-white transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Privacy</a>
+                    <a class="hover:text-white transition-colors cursor-pointer" onclick="navigateTo('help')">Terms</a>
+                    <a class="hover:text-white transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Contact</a>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Global Calendar Modal -->
+        <div id="calendar-overlay"
+            class="fixed inset-0 z-[100] items-center justify-center bg-black/80 backdrop-blur-lg px-4">
+            <div class="calendar-modal w-full max-w-[400px] rounded-[2.5rem] overflow-hidden transform transition-all duration-300"
+                id="calendar-content">
+                <div class="p-8 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Select Date</p>
+                        <h3 class="text-2xl font-black">October 2024</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button
+                            class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10"
+                            onclick="changeMonth(-1)"><span
+                                class="material-symbols-outlined">chevron_left</span></button>
+                        <button
+                            class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10"
+                            onclick="changeMonth(1)"><span
+                                class="material-symbols-outlined">chevron_right</span></button>
+                    </div>
+                </div>
+                <div class="p-8 pt-0">
+                    <div class="grid grid-cols-7 gap-2" id="calendar-days-grid">
+                        <!-- Days Rendered via JS -->
+                    </div>
+                </div>
+                <div class="p-8 bg-white/5 flex gap-4">
+                    <button class="flex-1 h-14 rounded-2xl bg-white/10 font-bold"
+                        onclick="toggleCalendar(false)">Cancel</button>
+                    <button class="flex-1 h-14 rounded-2xl bg-primary shadow-lg shadow-primary/20 font-bold"
+                        onclick="applyCalendarSelection()">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Search Modal -->
+        <div id="search-modal-overlay"
+            class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/80 backdrop-blur-xl px-4 opacity-0 transition-opacity duration-300">
+            <div class="glass-panel w-full max-w-lg rounded-[2.5rem] p-10 transform scale-95 transition-transform duration-300 shadow-2xl border border-white/10"
+                id="search-modal-content">
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-black mb-2">Modify Search</h3>
+                    <p class="text-slate-500 font-medium">Update your route and verify availability</p>
+                </div>
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-primary tracking-widest ml-1">From</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary"
+                                style="font-size: 24px;">trip_origin</span>
+                            <input id="modalFrom"
+                                class="glass-input w-full h-16 rounded-2xl pl-14 pr-6 text-xl font-bold text-white"
+                                value="Chennai, TN" />
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-primary tracking-widest ml-1">To</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary"
+                                style="font-size: 24px;">location_on</span>
+                            <input id="modalTo"
+                                class="glass-input w-full h-16 rounded-2xl pl-14 pr-6 text-xl font-bold text-white"
+                                value="Bangalore, KA" />
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mt-10">
+                        <button onclick="closeSearchModal()"
+                            class="flex-1 h-16 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all">Cancel</button>
+                        <button onclick="runModalSearch()" id="modalSearchBtn"
+                            class="flex-2 h-16 px-10 rounded-2xl bg-primary hover:bg-blue-500 text-white font-black text-lg transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-2">
+                            <span>Verify & Search</span>
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SPA LOGIC -->
+    <script>
+        // --- ROUTER ---
+        const views = ['home', 'search', 'seat', 'passenger', 'payment', 'success', 'dashboard', 'help', 'signin'];
+
+        function navigateTo(viewId) {
+            console.log('Navigating to:', viewId);
+
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+
+            // Show target view
+            const target = document.getElementById('view-' + viewId);
+            if (target) {
+                target.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Sync inputs between views
+            if (viewId === 'search') {
+                document.getElementById('headerFrom').textContent = document.getElementById('fromInput').value.split(',')[0];
+                document.getElementById('headerTo').textContent = document.getElementById('toInput').value.split(',')[0];
+                document.getElementById('sidebarFrom').value = document.getElementById('fromInput').value;
+                document.getElementById('sidebarTo').value = document.getElementById('toInput').value;
+            }
+
+            // Update Header Nav Links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const linkView = link.dataset.view;
+                if (linkView === viewId) {
+                    link.classList.remove('text-white/80');
+                    link.classList.add('text-white', 'text-primary');
+                } else {
+                    link.classList.remove('text-white', 'text-primary');
+                    link.classList.add('text-white/80');
+                }
+            });
+
+            // If header needs special background
+            const header = document.getElementById('main-header');
+            if (viewId === 'home') {
+                header.classList.remove('bg-background-dark');
+                header.classList.add('bg-background-dark/30');
+            } else {
+                header.classList.add('bg-background-dark');
+                header.classList.remove('bg-background-dark/30');
+            }
+        }
+
+        // --- SEARCH MODAL ---
+        function openSearchModal(focusField) {
+            const overlay = document.getElementById('search-modal-overlay');
+            const content = document.getElementById('search-modal-content');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                content.style.transform = 'scale(1)';
+            }, 10);
+
+            document.getElementById('modalFrom').value = document.getElementById('sidebarFrom').value;
+            document.getElementById('modalTo').value = document.getElementById('sidebarTo').value;
+
+            if (focusField === 'from') document.getElementById('modalFrom').focus();
+            else document.getElementById('modalTo').focus();
+        }
+
+        function closeSearchModal() {
+            const overlay = document.getElementById('search-modal-overlay');
+            const content = document.getElementById('search-modal-content');
+            overlay.style.opacity = '0';
+            content.style.transform = 'scale(0.95)';
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function runModalSearch() {
+            const btn = document.getElementById('modalSearchBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-2xl">sync</span><span>Verifying Route...</span>';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-2xl">verified</span><span>Route Confirmed!</span>';
+                setTimeout(() => {
+                    // Update all other inputs
+                    const from = document.getElementById('modalFrom').value;
+                    const to = document.getElementById('modalTo').value;
+                    document.getElementById('fromInput').value = from;
+                    document.getElementById('toInput').value = to;
+                    document.getElementById('sidebarFrom').value = from;
+                    document.getElementById('sidebarTo').value = to;
+                    document.getElementById('headerFrom').textContent = from.split(',')[0];
+                    document.getElementById('headerTo').textContent = to.split(',')[0];
+
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    closeSearchModal();
+                    // Just stay on search results but maybe re-trigger filters?
+                    applyFilters();
+                }, 800);
+            }, 1200);
+        }
+
+        function runSidebarSearch() {
+            const btn = document.getElementById('sidebarSearchBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:20px;">sync</span><span>Checking...</span>';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">verified</span><span>Checked Twice</span>';
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    applyFilters();
+                }, 800);
+            }, 1000);
+        }
+
+        // --- CALENDAR LOGIC ---
+        let activeDateView = 'home';
+        let currentMonth = 9; // October (0-indexed)
+        let currentYear = 2024;
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function toggleCalendar(show, viewOrigin) {
+            const overlay = document.getElementById('calendar-overlay');
+            if (viewOrigin) activeDateView = viewOrigin;
+
+            if (show) {
+                overlay.style.display = 'flex';
+                setTimeout(() => overlay.classList.add('active'), 10);
+                renderCalendar();
+            } else {
+                overlay.classList.remove('active');
+                setTimeout(() => overlay.style.display = 'none', 300);
+            }
+        }
+
+        function changeMonth(direction) {
+            // Add visual feedback for "twice checked" navigation
+            const grid = document.getElementById('calendar-days-grid');
+            const monthTitle = document.querySelector('.calendar-modal h3');
+
+            // First check - fade out
+            grid.style.opacity = '0.5';
+            grid.style.transform = 'scale(0.98)';
+
+            setTimeout(() => {
+                // Update month/year
+                currentMonth += direction;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                } else if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+
+                // Update title
+                monthTitle.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+                // Second check - render and fade in
+                setTimeout(() => {
+                    renderCalendar();
+                    grid.style.opacity = '1';
+                    grid.style.transform = 'scale(1)';
+                }, 150);
+            }, 150);
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-days-grid');
+            grid.style.transition = 'all 0.3s ease';
+
+            // Get days in current month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+            grid.innerHTML = '';
+
+            // Add day headers
+            const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'text-center text-xs font-bold text-slate-500 uppercase';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            // Add empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+
+            // Add day buttons
+            const today = new Date();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'calendar-day-btn text-white/70 hover:text-white';
+
+                // Disable past dates
+                const dateToCheck = new Date(currentYear, currentMonth, i);
+                if (dateToCheck < today && dateToCheck.toDateString() !== today.toDateString()) {
+                    btn.classList.add('disabled');
+                }
+
+                // Highlight default date (24th of October 2024)
+                if (i === 24 && currentMonth === 9 && currentYear === 2024) {
+                    btn.classList.add('active');
+                }
+
+                btn.textContent = i;
+                btn.onclick = (e) => selectDate(e, i);
+                grid.appendChild(btn);
+            }
+        }
+
+        function selectDate(e, date) {
+            document.querySelectorAll('.calendar-day-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+
+            // Format date with current month
+            const monthShort = monthNames[currentMonth].substring(0, 3);
+            const dayOfWeek = new Date(currentYear, currentMonth, date).toLocaleDateString('en-US', { weekday: 'short' });
+            const dateStr = `${dayOfWeek}, ${monthShort} ${date}`;
+
+            document.getElementById('homeDateDisplay').value = dateStr;
+            document.getElementById('searchDateDisplay').textContent = dateStr;
+
+            if (activeDateView === 'home') {
+                setTimeout(() => {
+                    toggleCalendar(false);
+                    showLoadingAndNavigate('search');
+                }, 500);
+            } else {
+                setTimeout(() => toggleCalendar(false), 300);
+            }
+        }
+
+        function applyCalendarSelection() {
+            toggleCalendar(false);
+            if (activeDateView === 'home') showLoadingAndNavigate('search');
+            else applyFilters();
+        }
+
+        // --- SEARCH & VERIFICATION ---
+        function showLoadingAndNavigate(dest) {
+            const btn = event.currentTarget.id ? event.currentTarget : event.target.closest('button');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span><span>Searching...</span>';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-green-400">verified</span><span>Checked Twice!</span>';
+                setTimeout(() => {
+                    navigateTo(dest);
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }, 800);
+            }, 1200);
+        }
+
+        // --- FILTERS ---
+        function toggleTimeFilter(btn) {
+            document.querySelectorAll('.time-filter').forEach(b => {
+                b.className = 'time-filter p-3 rounded-xl border border-[#283239] hover:bg-white/5 transition-all text-sm font-medium flex flex-col items-center gap-1 group';
+                b.querySelector('span:first-child').className = 'material-symbols-outlined text-slate-500 group-hover:text-primary';
+                b.querySelector('span:last-child').className = 'text-[10px] uppercase font-bold';
+            });
+
+            btn.className = 'time-filter p-3 rounded-xl border-2 border-primary bg-primary/10 text-primary transition-all text-sm font-bold flex flex-col items-center gap-1';
+            btn.querySelector('span:first-child').className = 'material-symbols-outlined';
+            btn.querySelector('span:last-child').className = 'text-[10px] uppercase';
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const activeTime = document.querySelector('.time-filter.bg-primary\\/10')?.dataset.time || 'afternoon';
+            const busList = document.getElementById('busList');
+            const cards = busList.querySelectorAll('.bus-card');
+
+            // Subtle transition
+            busList.style.opacity = '0';
+            setTimeout(() => {
+                let foundAny = false;
+                cards.forEach(card => {
+                    const time = card.dataset.time;
+                    if (time === activeTime) {
+                        card.classList.remove('hidden');
+                        card.classList.add('flex');
+                        foundAny = true;
+                    } else {
+                        card.classList.add('hidden');
+                        card.classList.remove('flex');
+                    }
+                });
+
+                document.getElementById('resultCountLabel').textContent = foundAny ? '8 Buses Found' : '0 Buses Found';
+                busList.style.opacity = '1';
+            }, 300);
+        }
+
+        function verifyAndSelectSeat(btn, time) {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-xl">sync</span><span>Verifying Availability...</span>';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-xl">verified</span><span>Checked Twice!</span>';
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    navigateTo('seat');
+                }, 600);
+            }, 1000);
+        }
+
+        function resetFilters() {
+            const afternoon = document.querySelector('[data-time="afternoon"]');
+            toggleTimeFilter(afternoon);
+        }
+
+        // --- SEAT LOGIC ---
+        function initSeats() {
+            const seats = document.querySelectorAll('.seat-3d:not(.cursor-not-allowed)');
+            seats.forEach(s => {
+                s.onclick = () => {
+                    s.classList.toggle('selected');
+                    s.classList.toggle('bg-primary');
+                    s.classList.toggle('bg-seat-available');
+                    const selected = document.querySelectorAll('.seat-3d.selected').length;
+                    document.getElementById('seatSelectionCount').textContent = `${selected} seats selected`;
+                };
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            navigateTo('home');
+            initSeats();
+
+            // Currency
+            const cBtn = document.getElementById('currency-btn');
+            const cDrop = document.getElementById('currency-dropdown');
+            cBtn.onclick = (e) => {
+                e.stopPropagation();
+                cDrop.classList.toggle('invisible');
+                cDrop.classList.toggle('opacity-0');
+                cDrop.classList.toggle('scale-95');
+            };
+            document.addEventListener('click', () => {
+                cDrop.classList.add('invisible', 'opacity-0', 'scale-95');
+            });
+            document.querySelectorAll('.currency-opt').forEach(opt => {
+                opt.onclick = () => {
+                    document.getElementById('active-currency').textContent = opt.dataset.currency;
+                };
+            });
+
+            // Swap Values
+            document.getElementById('swapBtn').onclick = () => {
+                const f = document.getElementById('fromInput');
+                const t = document.getElementById('toInput');
+                [f.value, t.value] = [t.value, f.value];
+            };
+        });
+    </script>
+</body>
+
+</html>

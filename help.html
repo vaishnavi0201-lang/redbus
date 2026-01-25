@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BusBooker - Help</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#259df4",
+                        "background-dark": "#101a22",
+                        "card-dark": "#1a2631",
+                        "border-dark": "#283239",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-background-dark text-white font-display overflow-x-hidden antialiased">
+
+    <!-- Shared Header -->
+    <header id="main-header"
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background-dark shadow-lg">
+        <div class="layout-container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-5">
+                <div class="flex items-center gap-3 text-white cursor-pointer" onclick="navigateTo('home')">
+                    <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 text-primary">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">directions_bus</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold tracking-tight">BusBooker</h2>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('home')">Home</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('search_results')">Routes</a>
+                    <a class="text-white/80 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('dashboard')">My Trips</a>
+                    <a class="text-white text-sm font-medium transition-colors cursor-pointer"
+                        onclick="navigateTo('help')">Help</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a onclick="navigateTo('signin')"
+                        class="flex items-center justify-center rounded-lg h-10 px-6 bg-white/10 hover:bg-white/20 text-white text-sm font-bold backdrop-blur-sm transition-all border border-white/10 cursor-pointer">Sign
+                        In</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="app-container">
+        <!-- Help & Support View -->
+        <section id="view-help" class="view">
+            <div class="flex flex-col flex-1 w-full max-w-4xl mx-auto px-4 py-24">
+                <h1 class="text-4xl font-bold mb-8">How can we help?</h1>
+                <div class="grid md:grid-cols-2 gap-6 mb-12">
+                    <div class="p-6 bg-card-dark rounded-2xl border border-border-dark shadow-sm">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-4">confirmation_number</span>
+                        <h3 class="text-xl font-bold">Booking Issues</h3>
+                        <p class="text-slate-500 text-sm mt-2">Facing trouble while booking or payment? We're here to
+                            help.</p>
+                    </div>
+                    <div class="p-6 bg-card-dark rounded-2xl border border-border-dark shadow-sm">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-4">support_agent</span>
+                        <h3 class="text-xl font-bold">Contact Support</h3>
+                        <p class="text-slate-500 text-sm mt-2">Chat with our 24/7 support team for immediate assistance.
+                        </p>
+                    </div>
+                </div>
+                <section class="space-y-6">
+                    <h2 class="text-2xl font-bold">Frequently Asked Questions</h2>
+                    <div class="space-y-4">
+                        <details class="group p-4 bg-card-dark rounded-xl border border-border-dark">
+                            <summary class="flex justify-between items-center cursor-pointer list-none font-medium">How
+                                do I download my ticket?<span
+                                    class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                            </summary>
+                            <p class="mt-4 text-sm text-slate-500">After booking, your ticket is available in the "My
+                                Trips" dashboard. You can download it as a PDF or add it to your Apple/Google Wallet.
+                            </p>
+                        </details>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>
